@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
+
 /**
  * @author 이동엽(Lee Dongyeop)
  * @date 2024. 06. 13
@@ -25,5 +27,10 @@ public class FirstController {
     public String welcome(@RequestHeader("first-request") final String header) {
         log.info("header[{}]", header);
         return "Welcome to the First service.";
+    }
+
+    @GetMapping("/check")
+    public String check() {
+        return "Hi, there. This is a message from first service";
     }
 }
