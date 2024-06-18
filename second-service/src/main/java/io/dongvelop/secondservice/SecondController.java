@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @description
  */
 @RestController
-@RequestMapping("/")
+@RequestMapping("/second-service")
 public class SecondController {
 
     @GetMapping("/welcome")
