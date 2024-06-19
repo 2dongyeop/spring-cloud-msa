@@ -11,10 +11,14 @@ eureka:
 spring:
   application:
     name: apigateway-service
-#    ?? ??? Java ???? ?? ?? <br/>
-#    ?, ?? ??? ???? ?? ? ??.
   cloud:
     gateway:
+      default-filters:
+        - name: GlobalFilter
+          args:
+            baseMessage: Spring Cloud Gateway Global Filter
+            preLogger: true
+            postLogger: true
       routes:
         - id: first-service
           uri: http://localhost:8081/
@@ -31,4 +35,9 @@ spring:
           filters:
 #            - AddRequestHeader=second-request, second-request-header2
 #            - AddResponseHeader=second-response, second-response-header2
-            - CustomFilter
+            - name: CustomFilter
+            - name: LoggingFilter
+              args:
+                baseMessage: Hi, Logging Filter
+                preLogger: true
+                postLogger: true
