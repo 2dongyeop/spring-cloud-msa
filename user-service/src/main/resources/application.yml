@@ -5,11 +5,28 @@ spring:
   application:
     name: user-service
 
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+
 eureka:
   instance:
-    instance-id: ${spring.cloud.client.hostname}:${spring.application.instance_id:${random.value}}
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
   client:
-    register-with-eureka: true  # Eureka ??? ??
-    fetch-registry: true  # Eureka ????? ?????? ??? ????? ??? ? (??? ??? ??)
+    register-with-eureka: true  # Eureka 에 등록
+    fetch-registry: true        # Eureka에서 주기적으로 최신 정보를 polling 해옴
     service-url:
       defaultZone: http://127.0.0.1:8761/eureka
+
+greeting:
+  message: Welcome to the Simple E-commerce.
