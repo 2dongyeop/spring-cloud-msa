@@ -1,6 +1,7 @@
 package io.dongvelop.userservice.service;
 
 import io.dongvelop.userservice.dto.UserDto;
+import io.dongvelop.userservice.repository.UserEntity;
 
 /**
  * @author 이동엽(Lee Dongyeop)
@@ -9,4 +10,7 @@ import io.dongvelop.userservice.dto.UserDto;
  */
 public interface UserService {
     UserDto createUser(UserDto userDto);
+
+    UserDto getUserById(String userId);
+    Iterable<UserEntity> getUserByAll();
 }

@@ -26,7 +26,7 @@ public class SecurityConfig {
 
         // authorization
         http.authorizeHttpRequests(auth -> auth
-                .requestMatchers(new AntPathRequestMatcher("/users/**")).permitAll()
+                .requestMatchers(new AntPathRequestMatcher("/**")).permitAll()
 
         );
 

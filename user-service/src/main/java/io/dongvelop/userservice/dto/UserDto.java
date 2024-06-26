@@ -1,8 +1,10 @@
 package io.dongvelop.userservice.dto;
 
+import io.dongvelop.userservice.vo.ResponseOrder;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * @author 이동엽(Lee Dongyeop)
@@ -18,4 +20,6 @@ public class UserDto {
     private Date createdAt;
 
     private String encryptedPwd;
+
+    private List<ResponseOrder> orders;
 }
