@@ -1,0 +1,35 @@
+server:
+  port: 0 # random port
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+    show-sql: true
+    generate-ddl: true
+
+
+eureka:
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+  client:
+    register-with-eureka: true  # Eureka ? ??
+    fetch-registry: true        # Eureka?? ????? ?? ??? polling ??
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka
+logging:
+  level:
+    root: debug
