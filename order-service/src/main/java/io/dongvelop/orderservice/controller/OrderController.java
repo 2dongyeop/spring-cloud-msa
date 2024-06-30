@@ -53,8 +53,11 @@ public class OrderController {
         Iterable<OrderEntity> orderList = orderService.getOrdersByUserId(userId);
 
         ArrayList<ResponseOrder> result = new ArrayList<>();
+        ModelMapper mapper = new ModelMapper();
+        mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
+
         orderList.forEach(orderEntity ->
-                result.add(new ModelMapper().map(orderEntity, ResponseOrder.class)));
+                result.add(mapper.map(orderEntity, ResponseOrder.class)));
 
         return ResponseEntity.status(200).body(result);
     }
