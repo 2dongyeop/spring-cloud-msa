@@ -322,3 +322,37 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
             - id: first-service
             uri: lb://MY-FIRST-SERVICE    # {lb=로드밸런싱}:#{서비스이름}
     ```
+
+<br/>
+
+## 2.4 Spring Cloud Gateway : Predicates & Filters
+아래에서는 Gateway에서 특정 조건이 만족할 경우, 요청 경로를 수정하는 예제다.
+
+- RemoveRequestHeader=Cookie:
+  - 이 필터를 요청에서 Cookie 헤더를 제거
+- RewritePath=/user-service/(?<segment>.*), /$\{segment}
+  - 이 필터는 요청 경로를 재작성 (ex. `/user-service/login` → `/login`)
+
+- 예시
+  ```yaml
+  spring:
+    application:
+      name: apigateway-service
+    cloud:
+      gateway:
+        default-filters:
+          - name: GlobalFilter
+            args:
+              baseMessage: Spring Cloud Gateway Global Filter
+              preLogger: true
+              postLogger: true
+        routes:
+          - id: user-service
+            uri: lb://USER-SERVICE
+            predicates:
+              - Path=/user-service/login  # 로그인 요청이 들어올 경우
+              - Method=POST
+            filters:
+              - RemoveRequestHeader=Cookie
+              - RewritePath=/user-service/(?<segment>.*), /$\{segment}
+  ```
