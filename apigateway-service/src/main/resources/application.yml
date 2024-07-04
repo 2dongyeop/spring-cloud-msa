@@ -41,11 +41,12 @@ spring:
         - id: user-service
           uri: lb://USER-SERVICE
           predicates:
-            - Path=/user-service/users  # 일반 User Service 호출
+            - Path=/user-service/**  # 일반 User Service 호출
             - Method=GET
           filters:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<sergment>.*), /$\{sergment}
+            - AuthorizationHeaderFilter
 
         - id: catalog-service
           uri: lb://CATALOG-SERVICE
@@ -72,3 +73,6 @@ spring:
                 baseMessage: Hi, Logging Filter
                 preLogger: true
                 postLogger: true
+
+token:
+  secret: user_token
