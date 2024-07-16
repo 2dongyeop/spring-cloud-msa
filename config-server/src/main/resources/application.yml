@@ -1,0 +1,14 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-service
+
+  cloud:
+    config:
+      server:
+        git:
+          # Local Git ???, ??? ?? ?? ?? ?? ?? (= ecommerce.yml ? ??)
+          # localhost:8888/ecommerce/default ??? ?? ?? ??
+          uri: /Users/2dongyeop/Developments/spring-cloud-config-server # Local Git UseCase
