@@ -3,6 +3,21 @@
 
 <br/>
 
+## 목차
+- [Spring Cloud Netflix Eureka](#1-spring-cloud-netflix-eureka)
+  - [Eureka Server](#11-eureka-server)
+- [API Gateway(Netflix Zuul, Spring Cloud Gateway)](#2-api-gateway-netflix-zuul-spring-cloud-gateway)
+  - [API Gateway란?](#21-api-gateway란)
+  - [Spring Cloud Zuul](#22-spring-cloud-zuul)
+  - [Spring Cloud Gateway](#23-spring-cloud-gateway)
+  - [Spring Cloud Gateway Filter](#24-spring-cloud-gateway--filter-적용하기)
+  - [Spring Cloud Gateway LoadBalancer](#24-spring-cloud-gateway--loadbalancer)
+- [Spring Cloud Config Server](#3-spring-cloud-config-server)
+  - [Spring Cloud Config의 장단점](#31-spring-cloud-config의-장단점)
+
+
+<br/>
+
 # 1. Spring Cloud Netflix Eureka
 Spring Cloud Eureka는 서비스 레지스트리와 서비스 디스커버리를 지원하는 라이브러리로써, 마이크로 서비스들의 정보를 저장하며, Server와 Client로 나뉜다.
 
@@ -356,3 +371,50 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
               - RemoveRequestHeader=Cookie
               - RewritePath=/user-service/(?<segment>.*), /$\{segment}
   ```
+
+<br/>
+
+# 3. Spring Cloud Config Server
+![img](image/config-1.png)
+
+- Config Server는 여러 서비스(MSA) 들의 설정 파일을 외부로 분리해, 하나의 중앙 설정 저장소 처럼 관리 할 수 있도록 해주며, **특정 설정 값이 변경시 각각의 서비스를 재기동 할 필요없이 적용이 가능하다.**
+- 기본적으로 설정 정보 저장을 위해 git을 사용하도록 되어있어서 손쉽게 외부 도구들로 접근 가능하고, 버전 관리도 가능하다. (Git이 아닌, 서버에서 파일로 로컬 보관도 가능하다.)
+
+<br/>
+
+## 3.1 Spring Cloud Config의 장단점
+### 장점
+1. 여러 서버의 설정 파일을 중앙 서버에서 관리할 수 있다. 
+2. 서버를 재배포 하지 않고 설정 파일의 변경사항을 반영할 수 있다.
+
+### 단점
+1. Git 서버 또는 설정 서버에 의한 장애가 전파될 수 있다.
+2. 우선 순위에 의해 설정 정보가 덮어씌워질 수 있다.
+    - 설정 파일의 우선순위는 크게는 아래와 같다.
+      1. 프로젝트의 application.yaml
+      2. 설정 저장소의 application.yaml
+      3. 프로젝트의 application-{profile}.yaml
+      4. 설정 저장소의 {application name}/{application name}-{profile}
+
+<br/>
+
+## 3.2 옵션 및 설정
+### 의존성 추가
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+		<artifactId>spring-cloud-config-server</artifactId>
+</dependency>
+```
+
+### Config 서버 활성화
+```java
+@EnableConfigServer
+@SpringBootApplication
+public class ConfigServerApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(ConfigServerApplication.class, args);
+	}
+}
+```
