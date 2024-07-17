@@ -13,7 +13,8 @@
   - [Spring Cloud Gateway Filter](#24-spring-cloud-gateway--filter-적용하기)
   - [Spring Cloud Gateway LoadBalancer](#24-spring-cloud-gateway--loadbalancer)
 - [Spring Cloud Config Server](#3-spring-cloud-config-server)
-  - [Spring Cloud Config의 장단점](#31-spring-cloud-config의-장단점)
+  - [Spring Cloud Config 적용 방법](#31-spring-cloud-config-적용-방법)
+  - [Spring Cloud Config Encrypt/Decrypt](#32-spring-cloud-config-적용-방법)
 
 
 <br/>
@@ -398,7 +399,7 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
 
 <br/>
 
-## 3.2 옵션 및 설정
+## 3.2 Spring Cloud Config 적용 방법
 ### 의존성 추가
 ```xml
 <dependency>
@@ -418,3 +419,43 @@ public class ConfigServerApplication {
 	}
 }
 ```
+
+<br/>
+
+## 3.3 Spring Cloud Config Encrypt/Decrypt
+- [참고자료](https://docs.spring.io/spring-cloud-config/reference/server/encryption-and-decryption.html)
+
+Config Server는 속성을 암호화하기 위해 대칭 키와 비대칭 키를 모두 지원한다.
+
+### 대칭키로 속성 암호화
+```yaml
+encrypt:
+  key: example
+```
+
+### 비대칭 키로 속성 암호화
+RSA나 키스토어를 참조하는 방식을 말하며, 아래에서는 keytool 명령어를 설명한다.
+아래 명령어를 실행할 경우, keystore.jks 파일이 생성된다.
+```shell
+keytool -genkeypair -alias {key-name} -keyalg RSA \
+-dname "CN=Web Server, OU=Unit, O=Organization, L=City, S=State, C=US" \
+-keypass {password} -keystore keystore.jks -storepass {secret}
+```
+
+키  스토어를 애플리케이션 루트에 둘 경우, 아래와 같이 키스토어를 사용하도록 구성할 수 있다.
+```yaml
+encrypt:
+  key-store:
+    alias: { key-name }
+    location: classpath:/keystore.jks
+    password: { password }
+    secret: { secret }
+```
+
+위처럼 키 스토어가 준비된 후에는 아래와 같이 속성을 암호화해보자.
+```shell
+$ curl {config-server-url}:{port}/encrypt -d "plaintext"
+-> {cipher-text}
+```
+
+이후에는 위에서 암호화한 값들을 속성에 작성하면 된다.
