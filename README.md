@@ -420,6 +420,20 @@ public class ConfigServerApplication {
 }
 ```
 
+### Micro Service에서 Config Server 참조하기
+Spring Cloud Config Server에 ecommerce.yml이 있다고 가정할 때, 아래와 같이 Config-Server 위치와 파일명을 지정할 수 있다. 
+```yaml
+# bootstrap.yml
+# = application.yml보다 먼저 읽히는 설정 파일
+spring:
+  cloud:
+    config:
+      uri: http://127.0.0.1:8888
+      name: ecommerce # config server에 위치한 yaml 파일 이름
+```
+
+
+
 <br/>
 
 ## 3.3 Spring Cloud Config Encrypt/Decrypt
