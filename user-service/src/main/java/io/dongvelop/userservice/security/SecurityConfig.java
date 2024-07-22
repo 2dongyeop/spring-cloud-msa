@@ -53,8 +53,8 @@ public class SecurityConfig {
 
         // authorization
         http.authorizeHttpRequests(auth -> auth
-                        .requestMatchers(new AntPathRequestMatcher("/**"))
-                        .permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/**")).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/actuator/**")).permitAll()
                 // 모든 경로에 특정 IP 에서만 요청할 수 있도록 제한
                 //  .access(this::hasIpAddress)
         );
