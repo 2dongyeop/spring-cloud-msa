@@ -15,7 +15,7 @@
 - [Spring Cloud Config Server](#3-spring-cloud-config-server)
   - [Spring Cloud Config 적용 방법](#31-spring-cloud-config-적용-방법)
   - [Spring Cloud Config Encrypt/Decrypt](#32-spring-cloud-config-적용-방법)
-
+  - [Config Server의 변경사항을 종료없이 Micro Service에 적용하기](#34-config-server의-변경-값을-micro-service에-적용하기)
 
 <br/>
 
@@ -473,3 +473,38 @@ $ curl {config-server-url}:{port}/encrypt -d "plaintext"
 ```
 
 이후에는 위에서 암호화한 값들을 속성에 작성하면 된다.
+
+## 3.4 Config Server의 변경 값을 Micro Service에 적용하기
+### 1. Micro Service를 재부팅하기
+이 방식은 서비스를 재부팅함으로써 다운타임이 생긴다는 치명적인 단점이 존재.
+
+### 2. Spring Actuator Refresh 기능 이용하기
+Spring Actuator의 Refresh 엔드포인트를 이용하면, 참조하는 환경 설정파일을 새로고침 한다.
+
+따라서 API Server를 재시작하지 않고, 변경 사항을 적용할 수 있다.
+
+1. Spring Actuator 의존성 추가하기
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+2. application.yml에 endpoint 추가하기
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh
+```
+
+3. Refresh Endpoint 호출하기
+Actuator의 다른 Endpoint(Health, Info ...)와 달리 POST 방식으로 요청해야 함.
+```shell
+curl -X POST "{Server Url}:{port}/actuator/refresh"
+```
+
+### 3. Spring Cloud Bus 이용하기
+추후 작성.
