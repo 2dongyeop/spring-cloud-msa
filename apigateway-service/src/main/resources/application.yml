@@ -11,6 +11,8 @@ eureka:
 spring:
   application:
     name: apigateway-service
+  profiles:
+    active: dev
   cloud:
     gateway:
       default-filters:
@@ -47,12 +49,20 @@ spring:
             - RemoveRequestHeader=Cookie
             - RewritePath=/user-service/(?<sergment>.*), /$\{sergment}
             - AuthorizationHeaderFilter
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/user-service/actuator/**  # 일반 User Service 호출
+            - Method=GET,POST
+          filters:
+            - RemoveRequestHeader=Cookie
+            - RewritePath=/user-service/(?<sergment>.*), /$\{sergment}
 
         - id: catalog-service
           uri: lb://CATALOG-SERVICE
           predicates:
             - Path=/catalog-service/**
-        - id : order-service
+        - id: order-service
           uri: lb://ORDER-SERVICE
           predicates:
             - Path=/order-service/**
@@ -76,3 +86,9 @@ spring:
 
 token:
   secret: user_token
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh, health, beans, httptrace

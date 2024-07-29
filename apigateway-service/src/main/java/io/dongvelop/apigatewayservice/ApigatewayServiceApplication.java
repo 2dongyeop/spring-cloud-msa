@@ -10,4 +10,9 @@ public class ApigatewayServiceApplication {
         SpringApplication.run(ApigatewayServiceApplication.class, args);
     }
 
+    // Spring Boot 2.x에서 Http Trace를 위한 빈 등록
+    // @Bean
+//    public HttpTraceRepository httpTraceRepository() {
+//        return new InMemoryHttpTraceRepository();
+//    }
 }
