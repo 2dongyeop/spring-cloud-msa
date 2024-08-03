@@ -1,5 +1,5 @@
 server:
-  port: 0 # random port
+  port: 9090 # random port
 
 spring:
   application:
@@ -30,6 +30,21 @@ eureka:
     fetch-registry: true        # Eureka?? ????? ?? ??? polling ??
     service-url:
       defaultZone: http://127.0.0.1:8761/eureka
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0   # 로그 샘플링 비율 - 1.0일 경우에는 100% 로그를 샘플링, default : 0.1
+    propagation: # 추적 정보 전파 방식 (wbc, b3, b3_multi)
+      produce: b3_multi  # 추적 정보를 여러 개의 헤더로 나누어 전송
+      consume: b3        # HTTP 헤더를 사용하여 추적 ID, 스팬 ID 등을 전달
+
+  zipkin:
+    tracing:
+      endpoint: "http://localhost:9411/api/v2/spans"
+
 logging:
+  pattern:
+    level: "%5p [%X{traceId:-},%X{spanId:-}]"
   level:
-    root: debug
+    io.dongvelop: debug

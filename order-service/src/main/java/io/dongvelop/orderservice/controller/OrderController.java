@@ -5,15 +5,18 @@ import io.dongvelop.orderservice.jpa.OrderEntity;
 import io.dongvelop.orderservice.service.OrderService;
 import io.dongvelop.orderservice.vo.RequestOrder;
 import io.dongvelop.orderservice.vo.ResponseOrder;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.slf4j.MDC;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.CREATED;
@@ -64,7 +67,18 @@ public class OrderController {
 
 
     @GetMapping("/health_check")
-    public String status() {
+    public String status(HttpServletRequest request) {
+        log.debug("health_check health_check");
+
+        String traceId = MDC.get("traceId");
+        log.info(traceId);
+
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String headerName = headerNames.nextElement();
+            log.info(headerName + ": " + request.getHeader(headerName));
+        }
+
         return String.format("It's Working in User Service on PORT %s",
                 env.getProperty("local.server.port"));
     }
