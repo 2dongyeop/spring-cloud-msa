@@ -66,15 +66,12 @@ public class UserController {
     public String status() {
         log.debug("health_check health_check");
 
-
-//        MDC.put("traceId");
-
-
         return "[User Service]\n" + String.format("It's Working in User Service on PORT %s",
                 env.getProperty("local.server.port")) + "token.expiration_time =" + env.getProperty("token.expiration_time")
-                + "\n"
-                + "[Order Service]\n"
-                + restTemplate.getForObject("http://127.0.0.1:9090/order-service/health_check", String.class);
+//                + "\n"
+//                + "[Order Service]\n"
+//                + restTemplate.getForObject("http://127.0.0.1:9090/order-service/health_check", String.class)
+                ;
     }
 
     @GetMapping("/welcome")
