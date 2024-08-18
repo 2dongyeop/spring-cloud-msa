@@ -16,6 +16,9 @@
   - [Spring Cloud Config 적용 방법](#31-spring-cloud-config-적용-방법)
   - [Spring Cloud Config Encrypt/Decrypt](#32-spring-cloud-config-적용-방법)
   - [Config Server의 변경사항을 종료없이 Micro Service에 적용하기](#34-config-server의-변경-값을-micro-service에-적용하기)
+- [Spring Cloud Bus](#4-spring-cloud-bus)
+  - [AMQP 설명](#41-amqp-설명)
+  - [Spring Cloud Bus 동작](#42-spring-cloud-bus-동작-방식)
 
 <br/>
 
@@ -388,6 +391,8 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
 1. 여러 서버의 설정 파일을 중앙 서버에서 관리할 수 있다. 
 2. 서버를 재배포 하지 않고 설정 파일의 변경사항을 반영할 수 있다.
 
+<br/>
+
 ### 단점
 1. Git 서버 또는 설정 서버에 의한 장애가 전파될 수 있다.
 2. 우선 순위에 의해 설정 정보가 덮어씌워질 수 있다.
@@ -403,10 +408,12 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
 ### 의존성 추가
 ```xml
 <dependency>
-	<groupId>org.springframework.cloud</groupId>
-		<artifactId>spring-cloud-config-server</artifactId>
+  <groupId>org.springframework.cloud</groupId>
+  <artifactId>spring-cloud-config-server</artifactId>
 </dependency>
 ```
+
+<br/>
 
 ### Config 서버 활성화
 ```java
@@ -420,6 +427,56 @@ public class ConfigServerApplication {
 }
 ```
 
+<br/>
+
+### Config 서버 설정
+```yaml
+# Native(Local File System) 사용시
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-service
+
+  profiles:
+    active: native # if config server target Native File System (Not Git)
+
+  cloud:
+    config:
+      server:
+        native:
+          # http://localhost:8888/ecommerce/native <- check source properties
+          search-locations: file://${user.home}/{config-file-path} 
+          # Native File System Location (Not Git)
+---------------
+
+# Git 사용시
+server:
+  port: 8888
+
+spring:
+  application:
+    name: config-service
+
+  cloud:
+    config:
+      server:
+        git:
+          # localhost:8888/ecommerce/default(or dev...) <- check source properties
+          # UseCase 1 : Local Git Repository  
+          # uri: /Users/2dongyeop/Developments/spring-cloud-config-server
+
+          # UseCase 2 : Remote Public Git Repository
+          uri: https://github.com/2dongyeop/spring-cloud-config-server.git
+
+          # UseCase 3 : Remote Private Git Repository (+ UseCase 2)
+          #username: $USERNAME
+          #password: $PASSWORD
+```
+
+<br/>
+
 ### Micro Service에서 Config Server 참조하기
 Spring Cloud Config Server에 ecommerce.yml이 있다고 가정할 때, 아래와 같이 Config-Server 위치와 파일명을 지정할 수 있다. 
 ```yaml
@@ -432,20 +489,20 @@ spring:
       name: ecommerce # config server에 위치한 yaml 파일 이름
 ```
 
-
-
 <br/>
 
 ## 3.3 Spring Cloud Config Encrypt/Decrypt
-- [참고자료](https://docs.spring.io/spring-cloud-config/reference/server/encryption-and-decryption.html)
+- Config Server는 속성을 암호화하기 위해 대칭 키와 비대칭 키를 모두 지원한다. → [참고자료](https://docs.spring.io/spring-cloud-config/reference/server/encryption-and-decryption.html)
 
-Config Server는 속성을 암호화하기 위해 대칭 키와 비대칭 키를 모두 지원한다.
+<br/>
 
 ### 대칭키로 속성 암호화
 ```yaml
 encrypt:
   key: example
 ```
+
+<br/>
 
 ### 비대칭 키로 속성 암호화
 RSA나 키스토어를 참조하는 방식을 말하며, 아래에서는 keytool 명령어를 설명한다.
@@ -455,6 +512,8 @@ keytool -genkeypair -alias {key-name} -keyalg RSA \
 -dname "CN=Web Server, OU=Unit, O=Organization, L=City, S=State, C=US" \
 -keypass {password} -keystore keystore.jks -storepass {secret}
 ```
+
+<br/>
 
 키  스토어를 애플리케이션 루트에 둘 경우, 아래와 같이 키스토어를 사용하도록 구성할 수 있다.
 ```yaml
@@ -466,6 +525,8 @@ encrypt:
     secret: { secret }
 ```
 
+<br/>
+
 위처럼 키 스토어가 준비된 후에는 아래와 같이 속성을 암호화해보자.
 ```shell
 $ curl {config-server-url}:{port}/encrypt -d "plaintext"
@@ -474,14 +535,18 @@ $ curl {config-server-url}:{port}/encrypt -d "plaintext"
 
 이후에는 위에서 암호화한 값들을 속성에 작성하면 된다.
 
+<br/>
+
 ## 3.4 Config Server의 변경 값을 Micro Service에 적용하기
 ### 1. Micro Service를 재부팅하기
-이 방식은 서비스를 재부팅함으로써 다운타임이 생긴다는 치명적인 단점이 존재.
+- **이 방식은 서비스를 재부팅함으로써 다운타임이 생긴다는 치명적인 단점이 존재.**
+
+
+<br/>
 
 ### 2. Spring Actuator Refresh 기능 이용하기
-Spring Actuator의 Refresh 엔드포인트를 이용하면, 참조하는 환경 설정파일을 새로고침 한다.
-
-따라서 API Server를 재시작하지 않고, 변경 사항을 적용할 수 있다.
+- Spring Actuator의 Refresh 엔드포인트를 이용하면, 참조하는 환경 설정파일을 새로고침 한다.
+- 따라서 API Server를 재시작하지 않고, 변경 사항을 적용할 수 있다.
 
 1. Spring Actuator 의존성 추가하기
 ```xml
@@ -506,5 +571,47 @@ Actuator의 다른 Endpoint(Health, Info ...)와 달리 POST 방식으로 요청
 curl -X POST "{Server Url}:{port}/actuator/refresh"
 ```
 
+**단, 이 방식은 마이크로 서비스가 수백개가 넘는 등의.. 수많은 설정 파일로 구성된다면 일일이 refresh를 시켜주기에는 무리가 있음.**
+
+<br/>
+
 ### 3. Spring Cloud Bus 이용하기
-추후 작성.
+- 분산 시스템의 노드(Micro Service에 해당)를 경량 메시지 브로커(ex. RabbitMQ)와 연결
+- 상태 및 구성에 대한 변경 사항을 연결된 노드에게 전달하는 방식
+- 자세한 내용은 [4. Spring Cloud Bus](#4-spring-cloud-bus)에서 확인
+
+
+<br/>
+
+# 4. Spring Cloud Bus
+## 4.1 Spring Cloud Bus 동작 방식
+![spring-cloud-bus-3.png](image%2Fspring-cloud-bus-3.png)
+- Spring Cloud Bus 로 연결된 서비스들 중 어느 한 곳이라도 `/busrefresh` endpoint를 호출 시, 모든 서비스에 변경 사항이 반영 
+- 이때, 변경 정보는 AMQP 프로토콜로 전달하는 방식
+
+<br/>
+
+## 4.2 AMQP(Advanced Message Queuing Protocol)
+- 메시지 지향 미들웨어를 위한 개방형 표준 응용 계층 프로토콜
+  - 큐잉, 라우팅(P2P, Pub-Sub), 신뢰성 및 보안을 강조
+  - Erlang, RabbitMQ, Kafka, Apache Pulsar 등이 존재
+
+<br/>
+
+### RabbitMQ와 Kafka 비교
+- RabbitMQ
+  - 메시지 브로커
+  - 초당 20+ 메시지를 소비자에게 전달
+  - 메시지 전달 보장, 시스템 간 메시지 전달
+  - 브로커, 소비자 중심
+- Kafka
+  - 분산형 스트리밍 플랫폼, 대용량의 데이터를 처리 가능한 메시징 시스템
+  - 초당 100k+ 이상의 이벤트 처리
+  - Pub/Sub, Topic에 메시지 전달
+  - Ack를 기다리지 않고 전달 가능(성능이 빠름)
+  - 생산자 중심
+- 성능 비교
+  
+  ![img](image/rabbitmq-kafka-1.png)
+
+<br/>
