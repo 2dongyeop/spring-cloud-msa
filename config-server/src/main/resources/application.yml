@@ -5,11 +5,17 @@ spring:
   application:
     name: config-service
 
+  profiles:
+    active: native # if config server target Native File System (Not Git)
+
   cloud:
     config:
       server:
+        native:
+          # http://localhost:8888/ecommerce/native <- check source properties
+          search-locations: file://${user.home}/Developments/spring-cloud-config-server # Native File System Location (Not Git)
         git:
-          # localhost:8888/ecommerce/default <- check source properties
+          # localhost:8888/ecommerce/default(or dev...) <- check source properties
 #          uri: /Users/2dongyeop/Developments/spring-cloud-config-server # Local Git UseCase
           uri: https://github.com/2dongyeop/spring-cloud-config-server.git # Remote Git UseCase
 #          username: $USERNAME # if Git Repository is PRIVATE
