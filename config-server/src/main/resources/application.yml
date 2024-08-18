@@ -9,6 +9,8 @@ spring:
     config:
       server:
         git:
-          # Local Git ???, ??? ?? ?? ?? ?? ?? (= ecommerce.yml ? ??)
-          # localhost:8888/ecommerce/default ??? ?? ?? ??
-          uri: /Users/2dongyeop/Developments/spring-cloud-config-server # Local Git UseCase
+          # localhost:8888/ecommerce/default <- check source properties
+#          uri: /Users/2dongyeop/Developments/spring-cloud-config-server # Local Git UseCase
+          uri: https://github.com/2dongyeop/spring-cloud-config-server.git # Remote Git UseCase
+#          username: $USERNAME # if Git Repository is PRIVATE
+#          password: $PASSWORD # if Git Repository is PRIVATE
