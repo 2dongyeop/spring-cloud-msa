@@ -11,6 +11,13 @@ eureka:
 spring:
   application:
     name: apigateway-service
+
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672 # 5672 is AMQP protocol port. 15672 is RabbitMQ UI port
+    username: guest # default value
+    password: guest # default value
+
   profiles:
     active: dev
   cloud:
@@ -91,4 +98,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: refresh, health, beans, httptrace
+        include: refresh, health, beans, httptrace, busrefresh

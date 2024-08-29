@@ -5,6 +5,12 @@ spring:
   application:
     name: config-service
 
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672 # 5672 is AMQP protocol port. 15672 is RabbitMQ UI port
+    username: guest # default value
+    password: guest # default value
+
   profiles:
     active: native # if config server target Native File System (Not Git)
 
@@ -20,3 +26,9 @@ spring:
           uri: https://github.com/2dongyeop/spring-cloud-config-server.git # Remote Git UseCase
 #          username: $USERNAME # if Git Repository is PRIVATE
 #          password: $PASSWORD # if Git Repository is PRIVATE
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, busrefresh
