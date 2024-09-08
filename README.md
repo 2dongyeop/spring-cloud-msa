@@ -20,6 +20,9 @@
 - [Spring Cloud Bus](#4-spring-cloud-bus)
     - [AMQP 설명](#41-amqp-설명)
     - [Spring Cloud Bus 동작](#42-spring-cloud-bus-동작-방식)
+    - [Spring Cloud Bus 적용](#43-spring-cloud-bus-적용하기)
+- [설정 정보의 암호화 처리](#5-설정-정보의-암호화-처리-)
+
 
 <br/>
 
@@ -754,3 +757,21 @@ curl -X POST http://localhost:8000/actuator/refresh
 # User Service의 Bus Refresh 호출 시
 curl -X POST http://localhost:8000/user-service/actuator/refresh
 ```
+
+<br/>
+
+# 5. 설정 정보의 암호화 처리 
+## 5.1 암호화 기본 개념
+> Symmetric Encryption(Shared)
+- 대칭 암호화 방식
+- 암호화/복호화 할 때의 키가 동일
+
+> Asymmetric Encryption(RSA Keypair)
+- 암호화/복호화 할 때의 키가 다름
+- Private/Public Key 방식
+- 혹은 Using Java Keytool(JDK 내장 도구로, private/public 키를 생성)
+
+> 동작 방식
+- Spring Cloud Server에서는 `{cipher}` 꼴로 시작하는 암호화된 환경 설정 파일을 저장
+- 이후, 이를 참조하는 각각의 Micro Service 들에게는 복호화된 설정 파일을 제공하는 방식
+  ![enc:decryption.png](image%2Fenc%3Adecryption.png)
