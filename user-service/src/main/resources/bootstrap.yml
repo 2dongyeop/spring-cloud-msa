@@ -3,10 +3,11 @@
 ######################################################
 
 spring:
-  profiles:
-    active: dev
+#  profiles:
+#    active: dev
 
   cloud:
     config:
       uri: http://127.0.0.1:8888
-      name: ecommerce # config server에 위치한 yaml 파일 이름
+#      name: ecommerce # config server에 위치한 yaml 파일 이름
+      name: config-service # Config Server application name을 명시 (= Config Server의 application.yml을 불러옴을 의미)

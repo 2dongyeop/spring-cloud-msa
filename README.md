@@ -743,3 +743,14 @@ management:
       exposure:
         include: refresh, health, beans, busrefresh
 ```
+
+### Bus Refresh 동작 호출
+RabbitMQ로 Bus refresh를 동작하도록 추가했다면, 어느 Micro Service를 호출해도 상관없다.
+```bash
+# 아래의 localhost:8000 은 API Gateway 주소입니다.
+# API Gateway의 Bus Refresh 호출 시
+curl -X POST http://localhost:8000/actuator/refresh
+
+# User Service의 Bus Refresh 호출 시
+curl -X POST http://localhost:8000/user-service/actuator/refresh
+```
