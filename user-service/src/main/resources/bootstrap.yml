@@ -10,4 +10,5 @@ spring:
     config:
       uri: http://127.0.0.1:8888
 #      name: ecommerce # config server에 위치한 yaml 파일 이름
-      name: config-service # Config Server application name을 명시 (= Config Server의 application.yml을 불러옴을 의미)
+#      name: config-service # Config Server application name을 명시 (= Config Server의 application.yml을 불러옴을 의미)
+      name: user-service # Config Server의 user-service.yml을 불러옴을 의미

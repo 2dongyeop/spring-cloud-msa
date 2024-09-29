@@ -11,11 +11,12 @@ spring:
     username: guest # default value
     password: guest # default value
 
-  datasource:
-    url: jdbc:h2:tcp://localhost/~/testdb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+# Migration To Local Config Repository
+#  datasource:
+#    url: jdbc:h2:tcp://localhost/~/testdb
+#    username: sa
+#    password:
+#    driver-class-name: org.h2.Driver
 
   jpa:
     hibernate:
