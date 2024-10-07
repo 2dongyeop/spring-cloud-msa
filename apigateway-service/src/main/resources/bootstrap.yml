@@ -7,4 +7,4 @@ spring:
     config:
       uri: http://127.0.0.1:8888
 #      name: ecommerce # config server에 위치한 yaml 파일 이름
-      name: config-serice
+      name: config-service
