@@ -45,6 +45,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Iterable<OrderEntity> getOrdersByUserId(String userId) {
-        return orderRepository.findAll();
+        return orderRepository.findByUserId(userId);
+//        return orderRepository.findAll();
     }
 }
