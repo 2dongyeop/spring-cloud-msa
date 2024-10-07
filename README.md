@@ -22,7 +22,8 @@
     - [Spring Cloud Bus 동작](#42-spring-cloud-bus-동작-방식)
     - [Spring Cloud Bus 적용](#43-spring-cloud-bus-적용하기)
 - [설정 정보의 암호화 처리](#5-설정-정보의-암호화-처리-)
-
+    - [암복호화 기본 개념](#51-암호화-기본-개념)
+    - [설정파일 암복호화 활성화](#52-설정파일-암복호화-활성화)
 
 <br/>
 
@@ -686,23 +687,27 @@ $ docker run -it --rm --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:3-man
 ```
 
 ### Config Server
+
 1. 의존성 추가
+
 ```xml
+
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-actuator</artifactId>
 </dependency>
 <dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-bus-amqp</artifactId>
+<groupId>org.springframework.cloud</groupId>
+<artifactId>spring-cloud-starter-bus-amqp</artifactId>
 </dependency>
 <dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-bootstrap</artifactId>
+<groupId>org.springframework.cloud</groupId>
+<artifactId>spring-cloud-starter-bootstrap</artifactId>
 </dependency>
 ```
 
 2. RabbitMQ 설정 파일 작성 (busrefresh endpoint 필수)
+
 ```yaml
 spring:
   ...
@@ -721,8 +726,11 @@ management:
 ```
 
 ### 기타 MicroService 및 API Gateway
+
 1. 의존성 추가(액츄에이터가 이미 추가되어 있다는 가정)
+
 ```xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-bus-amqp</artifactId>
@@ -730,10 +738,11 @@ management:
 ```
 
 2. RabbitMQ 설정 파일 작성
+
 ```yaml
 spring:
   ...
-  
+
   rabbitmq:
     host: 127.0.0.1
     port: 5672 # 5672 is AMQP protocol port. 15672 is RabbitMQ UI port
@@ -748,7 +757,9 @@ management:
 ```
 
 ### Bus Refresh 동작 호출
+
 RabbitMQ로 Bus refresh를 동작하도록 추가했다면, 어느 Micro Service를 호출해도 상관없다.
+
 ```bash
 # 아래의 localhost:8000 은 API Gateway 주소입니다.
 # API Gateway의 Bus Refresh 호출 시
@@ -760,18 +771,88 @@ curl -X POST http://localhost:8000/user-service/actuator/refresh
 
 <br/>
 
-# 5. 설정 정보의 암호화 처리 
+# 5. 설정 정보의 암호화 처리
+
 ## 5.1 암호화 기본 개념
+
 > Symmetric Encryption(Shared)
+
 - 대칭 암호화 방식
 - 암호화/복호화 할 때의 키가 동일
 
 > Asymmetric Encryption(RSA Keypair)
+
 - 암호화/복호화 할 때의 키가 다름
 - Private/Public Key 방식
 - 혹은 Using Java Keytool(JDK 내장 도구로, private/public 키를 생성)
 
 > 동작 방식
+
 - Spring Cloud Server에서는 `{cipher}` 꼴로 시작하는 암호화된 환경 설정 파일을 저장
 - 이후, 이를 참조하는 각각의 Micro Service 들에게는 복호화된 설정 파일을 제공하는 방식
   ![enc:decryption.png](image%2Fenc%3Adecryption.png)
+
+<br/>
+
+## 5.2 설정파일 암복호화 활성화
+
+### 1. jks 파일 생성하기
+
+```bash
+$ keytool -genkeypair -alias 2dongyeop \
+  -keyalg RSA -dname "CN=Dongyeop Lee, OU=Development, O=songareeit.com, L=Seoul, C=KR" \
+  -keypass "example1234" -keystore 2dongyeop.jks -storepass "example1234"
+```
+
+- `keytool` : Java의 keytool 유틸리티 실행 명령어
+- `-genkeypair` : 공개키와 개인키를 생성하는 옵션
+- `-alias` : 키의 별칭 지정
+- `keyalg RSA` : RSA 알고리즘으로 키 쌍을 생성
+- `-dname` : 인증서에 포함될 사용자 정보를 지정
+    - `CN (Common Name), OU(Organizational Unit), O(Organization), L(Location), C(Country)`
+- `-keypass` : 개인키 암호 지정
+- `-keystore` : 키스토어 파일의 경로와 이름을 지정
+- `-storepasss` : 키스토어 파일 자체의 암호를 지정
+- `-validity` : 인증 기한 설정. 일(day) 단위이며, 기본 값은 90일.
+
+### 2. 키파일 위치 지정
+
+```yaml
+# Config Server 설정파일
+encrypt:
+  # 단방향 암호화. keytool을 이용한 .jks 파일 필요 x
+  # key: abcdefghijklmnopqrstuvwxyz0123456789
+  key-store:
+    location: file://${user.home}/{경로}/{키 이름}.jks
+    password: example1234
+    alias: 2dongyeop
+```
+
+### 3. 암복호화 결과 확인
+
+```bash
+$ curl localhost:8888/encrypt -s -d test
+
+-> ASFAVIDSJVSDKDVS....
+```
+
+### 4. 암호화된 값을 설정파일에 적용
+
+```yaml
+# AS-IS
+spring:
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+#############################################
+# TO-BE
+spring:
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/testdb
+    username: '{cipher}AQBd5MeVwOVNJ......'
+    password:
+    driver-class-name: org.h2.Driver
+```
+
