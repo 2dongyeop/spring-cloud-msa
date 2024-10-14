@@ -24,6 +24,9 @@
 - [설정 정보의 암호화 처리](#5-설정-정보의-암호화-처리-)
     - [암복호화 기본 개념](#51-암호화-기본-개념)
     - [설정파일 암복호화 활성화](#52-설정파일-암복호화-활성화)
+- [MicroService 간 통신](#6-microservice-간-통신)
+    - [RestTemplate](#61-resttemplate)
+    - [OpenFeign](#62-openfeign)
 
 <br/>
 
@@ -855,4 +858,154 @@ spring:
     password:
     driver-class-name: org.h2.Driver
 ```
+
+<br/>
+
+# 6. MicroService 간 통신
+
+## 6.1 RestTemplate
+
+![resttemplate1.png](image/resttemplate1.png)
+
+### 1. RestTemplate 소개
+
+- 스프링 프레임워크에서 제공하는 RESTful API 통신을 위한 도구
+    - 다양한 HTTP Method를 사용하며, 외부 서버와 동기식 방식으로 통신한다.
+    - 동기식 으로 요청을 보내고 응답을 받을 때까지 블로킹된다. (응답을 기다린다.)
+- Spring 공식 문서에서 RestTemplate을 확인하면 아래와 같이 내용이 있다.
+    - 동기식 HTTP 접근에 사용하고 있을 경우 → Spring 6.1에 나온 RestClient 사용을 권장
+    - 비동기 및 스트리밍 시나리오의 경우 → WebClient 사용을 권장
+
+### 2. RestTemplate 빈 등록 방식
+
+```java
+
+@Configuration
+public class RestTemplateConfig {
+
+    @Value("${restTemplate.connectTimeOut}")
+    private Long connectTimeOut;
+    @Value("${restTemplate.readTimeOut}")
+    private Long readTimeOut;
+
+    @Bean
+    @Qualifier("restTemplate")
+    public RestTemplate restTemplate(final RestTemplateBuilder restTemplateBuilder) {
+        return restTemplateBuilder
+                .setConnectTimeout(Duration.ofSeconds(connectTimeOut)) // 외부 API 서버에 연결 요청 시간
+                .setReadTimeout(Duration.ofSeconds(readTimeOut))       // 외부 API 서버로부터 데이터를 읽어오는 시간
+                .build();
+    }
+}
+```
+
+### 3. RestTemplate 단점
+
+- 비즈니스 코드에 지저분한 설정들이 섞인다.
+- Retry를 구현할 경우, 추가 의존성(spring-retry, spring-boot-starter-aop)을 필요로 한다.
+- 제공되는 로그가 자세하지 않다.
+
+<br/>
+
+## 6.2 OpenFeign
+
+### 1. OpenFeign 소개
+
+- Netflix에 의해 처음 만들어진 Declarative(선언적) HTTP Client 도구로써, 외부 API 호출을 쉽게 할 수 있도록 도와준다.
+- 여기서 선언적이란 애너테이션 사용을 의미한다.
+
+### 2. OpenFeign 장점
+
+- 인터페이스와 애너테이션 기반으로 작성할 코드가 줄어듬
+- 익숙한 Spring MVC 애너테이션으로 개발이 가능
+- 다른 Spring Cloud 기술들 (Eureka, Circuit Breaker, LoadBalancer) 과의 통합이 쉬움
+
+### 3. OpenFeign 기능
+
+- 타임아웃, 재시도(Retry) 지원
+- 각각의 Feign Client별로 로그 레벨을 지정 가능
+- Fallback 설정 가능
+- Fallback : 실행을 실패(Exception)하는 경우에 대신 실행되게하는 프로세스
+- Error Handling (Error Decoder) 지원
+- RequestInterceptor 지원
+- 위 기능들을 모두 구성 속성(application.yml)로 설정 가능
+
+### 4. 사용 방법
+
+1. 의존성 추가
+
+```xml
+
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-openfeign</artifactId>
+    <version>{version}</version>
+</dependency>
+```
+
+2. Fegin Client 활성화
+
+```java
+
+@EnableFeignClients // Feign Client 활성화
+@SpringBootApplication
+public class RequestServerApplication { ...
+}
+```
+
+3. Feign Client 정의
+
+```java
+
+@FeignClient(value = "order-service", url = "${url.order-service.endpoint")
+public interface OrderServiceClient {
+
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    CommonResponse send(@RequestBody CommonRequest request);
+}
+```
+
+4. Feign Client 호출
+
+```java
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class UserService {
+
+    private final OrderFeignClient orderFeignClient;
+
+    /**
+     * FeignClient로 외부 API를 호출하는 예시
+     */
+    public CommonResponse send(final CommonRequest request) {
+        log.debug("request[{}]", request);
+        return orderFeignClient.send(request);
+    }
+}
+
+```
+
+5. 기타 - 로그 설정 및 에러 처리
+
+```java
+
+@Slf4j
+public class CustomErrorDecoder implements ErrorDecoder {
+
+    @Override
+    public Exception decode(final String methodKey, final Response response) {
+        log.warn("statusCode[{}], methodKey[{}]", response.status(), methodKey);
+
+        return switch (response.status()) {
+            case 400 -> ...
+            case 404 -> ...
+            case 500 -> ...
+            default -> ...
+        };
+    }
+}
+``` 
+
 
