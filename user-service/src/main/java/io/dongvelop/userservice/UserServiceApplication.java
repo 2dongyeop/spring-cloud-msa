@@ -1,5 +1,7 @@
 package io.dongvelop.userservice;
 
+import feign.Logger;
+import io.dongvelop.userservice.error.FeignErrorDecoder;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.boot.SpringApplication;
@@ -37,5 +39,10 @@ public class UserServiceApplication {
     @LoadBalanced
     public RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
         return restTemplateBuilder.build();
+    }
+
+    @Bean
+    public Logger.Level feignLoggerLevel() {
+        return Logger.Level.FULL;
     }
 }

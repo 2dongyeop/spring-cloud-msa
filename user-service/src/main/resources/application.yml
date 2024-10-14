@@ -64,7 +64,7 @@ logging:
 #  pattern:
 #    level: "%5p [%X{traceId:-},%X{spanId:-}]"
   level:
-    io.dongvelop: DEBUG
+    io.dongvelop.userservice.client: DEBUG
 
 token:
   expiration_time: 86400000

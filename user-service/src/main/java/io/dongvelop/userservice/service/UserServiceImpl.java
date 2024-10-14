@@ -1,5 +1,7 @@
 package io.dongvelop.userservice.service;
 
+import feign.FeignException;
+import io.dongvelop.userservice.client.OrderServiceClient;
 import io.dongvelop.userservice.dto.UserDto;
 import io.dongvelop.userservice.repository.UserEntity;
 import io.dongvelop.userservice.repository.UserRepository;
@@ -36,6 +38,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
+    private final OrderServiceClient orderServiceClient;
+
 
     @Value("${url.order-service.order}")
     private String orderUrl;
@@ -68,14 +72,20 @@ public class UserServiceImpl implements UserService {
         String formatted = String.format(orderUrl, userId);
         log.info("formatted[{}]", formatted);
 
+        List<ResponseOrder> orderList = null;
+
         /* 1. Using RestTemplate */
-        final ResponseEntity<List<ResponseOrder>> orderListResponse = restTemplate.exchange(
-                formatted,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<>() {
-                });
-        final List<ResponseOrder> orderList = orderListResponse.getBody();
+//        final ResponseEntity<List<ResponseOrder>> orderListResponse = restTemplate.exchange(
+//                formatted,
+//                HttpMethod.GET,
+//                null,
+//                new ParameterizedTypeReference<>() {
+//                });
+//        orderList = orderListResponse.getBody();
+
+
+        /* 2. Using Openfeign & Error Decoder */
+        orderList = orderServiceClient.getOrders(userId);
 
         userDto.setOrders(orderList);
         return userDto;
