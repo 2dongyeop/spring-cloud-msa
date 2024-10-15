@@ -27,6 +27,9 @@
 - [MicroService 간 통신](#6-microservice-간-통신)
     - [RestTemplate](#61-resttemplate)
     - [OpenFeign](#62-openfeign)
+- [데이터 동기화를 위한 Apache Kafka 활용](#7-데이터-동기화를-위한-apache-kafka-활용-1)
+    - [Apache Kafka 개요](#7-1-apache-kafka-개요)
+    - [Apache Kafka 서버 기동 및 튜토리얼](#7-2-apache-kafka-서버-기동-및-튜토리얼)
 
 <br/>
 
@@ -1008,4 +1011,73 @@ public class CustomErrorDecoder implements ErrorDecoder {
 }
 ``` 
 
+<br/>
 
+# 7. 데이터 동기화를 위한 Apache Kafka 활용-1
+
+## 7-1. Apache Kafka 개요
+
+### 1. Apache Kafka 소개
+
+- Apache Software Foundation의 Scalar 언어로 된 오픈소스 메시지 브로커
+- 링크드인에서 개발 (2011년 오픈소스화). 이후 엔지니어들이 Kafka 개발에 집중하기 위해 Confluent 창립
+
+### 2. Apache Kafka 특징
+
+- Producer/Consumer 분리
+- 메시지를 여러 Consumer에게 허용
+- 높은 처리량을 위한 메시지 최적화
+- Scale-out 가능, Eco-system
+
+### 3. Apache Kafka 구성
+
+- 실행된 Kafka 애플리케이션 서버
+- 3대 이상의 Broker Cluster 구성
+    - n대 중 1개는 Controller 역할
+    - = 각 Broker에게 담당 파티션 할당 수행 & Broker 정상 동작 모니터링
+- Zookeeper 연동
+    - 메타데이터 (Broker ID, Controller ID 등) 저장
+
+### 4. Apache Kafka 설치
+
+- Docker 를 이용해서도 환경 구성은 가능. 강의에서는 직접 설치하는 방식
+- [공식 홈페이지 설치 링크](https://kafka.apache.org/downloads)
+
+## 7-2. Apache Kafka 서버 기동 및 튜토리얼
+
+> 아래 모든 명령어를 실행시키는 위치는 Kafka를 다운로드한 위치(`$KAFKA_HOME`)입니다.
+
+### 1. Zookeeper 및 Kafka 서버 기동
+
+```shell
+# Zookeeper 실행
+$ ./bin/zookeeper-server-start.sh ./config/zookeeper.properties
+
+# Kafka 실행
+$ ./bin/kafka-server-start.sh ./config/server.properties
+```
+
+### 2. Topic 생성 및 목록 확인
+
+```shell
+# 토픽 생성
+$ ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic quickstart-events --partitions 1
+
+# 토픽 목록 확인
+$ ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+# 특정 토픽 상세 조회
+$ ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic quickstart-events
+```
+
+### 3. Producer 및 Consumer 실행
+
+```shell
+# Producer 실행
+$ ./bin/kafka-console-producer.sh --broker-list localhost:9092 --topic quickstart-events
+> {전달할 메시지 입력}
+
+# Consumer 실행
+$ ./bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic quickstart-events --from-beginning
+{시작 직후 즉시 메시지 도착 & 이전에 해당 토픽으로 도착한 메시지가 있다면 즉시 노출.}
+```
