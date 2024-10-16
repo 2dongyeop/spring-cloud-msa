@@ -30,6 +30,7 @@
 - [데이터 동기화를 위한 Apache Kafka 활용](#7-데이터-동기화를-위한-apache-kafka-활용-1)
     - [Apache Kafka 개요](#7-1-apache-kafka-개요)
     - [Apache Kafka 서버 기동 및 튜토리얼](#7-2-apache-kafka-서버-기동-및-튜토리얼)
+    - [Kafka Connect 개요 및 기동](#7-3-kafka-connect)
 
 <br/>
 
@@ -1080,4 +1081,55 @@ $ ./bin/kafka-console-producer.sh --broker-list localhost:9092 --topic quickstar
 # Consumer 실행
 $ ./bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic quickstart-events --from-beginning
 {시작 직후 즉시 메시지 도착 & 이전에 해당 토픽으로 도착한 메시지가 있다면 즉시 노출.}
+```
+
+## 7-3. Kafka Connect
+
+![kafka-connect-01.png](image/kafka-connect-01.png)
+
+### 1. Kafka Connect 소개
+
+- Data를 Import/Export 하는 기능 제공
+- 코드를 작성하지 않고 Configuration으로 데이터를 이동
+- Standalone mode & Distribution mode 지원
+    - RESTful API 통해 지원
+    - Stream 또는 Batch 형태로 데이터 전송 가능
+    - 커스텀 Connector를 통한 다양한 Plugin 제공(File, S3, Hibe, Mysql, etc ...)
+
+### 2. Kafka Connect 기동
+
+#### Kafka Connect 설치
+
+```shell
+$ curl -O https://packages.confluent.io/archive/6.1/confluent-community-6.1.0.tar.gz
+$ tar xvf confluent-community-6.1.0.tar.gz
+```
+
+#### Kafka Connect 실행
+
+```shell
+# Connect가 설치된 위치에서
+$ ./bin/connect-distributed ./etc/kafka/connect-distributed.properties
+```
+
+#### JDBC Connector 설치
+
+- [JDBC Connector 설치 링크](https://www.confluent.io/hub/confluentinc/kafka-connect-jdbc?session_ref=https://www.google.com/&_ga=2.258331402.1052886943.1729079800-1664852375.1729079799&_gl=1*se5yq4*_gcl_au*MTQxNTg1NzI5OC4xNzI5MDc5Nzk5*_ga*MTY2NDg1MjM3NS4xNzI5MDc5Nzk5*_ga_D2D3EGKSGD*MTcyOTA3OTc5OS4xLjEuMTcyOTA4MTM5OS41OS4wLjA.)
+
+#### JDBC Connector를 플러그인으로 추가
+
+```shell
+# confluent-6.1.0 설치 위치에서
+$ code ./etc/kafka/connect-distributed.properties
+>>>>>
+ /Users/2dongyeop/Developments/kafka-demo/confluentinc-kafka-connect-jdbc-10.8.0/lib
+<<<<< EOF
+```
+
+#### JDBC Connector에서 사용할 MySQL Driver 복사
+
+```shell
+# Order Service에 mariadb-java-client 의존성을 추가했다면 로컬 mvn repository에 jar이 존재.
+cp /Users/2dongyeop/.m2/repository/org/mariadb/jdbc/mariadb-java-client/2.7.2/mariadb-java-client-2.7.2.jar \
+   /Users/2dongyeop/Developments/kafka-demo/confluent-6.1.0/share/java/kafka
 ```

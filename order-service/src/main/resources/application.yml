@@ -9,7 +9,7 @@ spring:
     url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8
     username: root
     password: test1234
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    driver-class-name: org.mariadb.jdbc.Driver
 
   jpa:
     hibernate:
@@ -20,8 +20,8 @@ spring:
         format_sql: true
     show-sql: true
     generate-ddl: true
-    database: mysql
-    database-platform: org.hibernate.dialect.MySQLDialect
+#    database: mysql
+#    database-platform: org.hibernate.dialect.MySQLDialect
 
 
 eureka:
