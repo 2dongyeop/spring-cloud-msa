@@ -6,10 +6,10 @@ spring:
     name: order-service
 
   datasource:
-    url: jdbc:h2:tcp://localhost/~/testdb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8
+    username: root
+    password: test1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
@@ -20,6 +20,8 @@ spring:
         format_sql: true
     show-sql: true
     generate-ddl: true
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQLDialect
 
 
 eureka:
@@ -44,7 +46,7 @@ management:
 #      endpoint: "http://localhost:9411/api/v2/spans"
 
 logging:
-#  pattern:
-#    level: "%5p [%X{traceId:-},%X{spanId:-}]"
+  #  pattern:
+  #    level: "%5p [%X{traceId:-},%X{spanId:-}]"
   level:
     io.dongvelop: debug
