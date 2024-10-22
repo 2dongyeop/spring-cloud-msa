@@ -1096,20 +1096,13 @@ $ ./bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic quic
     - Stream 또는 Batch 형태로 데이터 전송 가능
     - 커스텀 Connector를 통한 다양한 Plugin 제공(File, S3, Hibe, Mysql, etc ...)
 
-### 2. Kafka Connect 기동
+### 2. Kafka Connect 설치 및 설정
 
 #### Kafka Connect 설치
 
 ```shell
-$ curl -O https://packages.confluent.io/archive/6.1/confluent-community-6.1.0.tar.gz
-$ tar xvf confluent-community-6.1.0.tar.gz
-```
-
-#### Kafka Connect 실행
-
-```shell
-# Connect가 설치된 위치에서
-$ ./bin/connect-distributed ./etc/kafka/connect-distributed.properties
+$ curl -O https://packages.confluent.io/archive/7.7/confluent-community-7.7.1.tar.gz
+$ tar xvf confluent-community-7.1.1.tar.gz
 ```
 
 #### JDBC Connector 설치
@@ -1119,10 +1112,10 @@ $ ./bin/connect-distributed ./etc/kafka/connect-distributed.properties
 #### JDBC Connector를 플러그인으로 추가
 
 ```shell
-# confluent-6.1.0 설치 위치에서
+# confluent-7.1.1 설치 위치에서
 $ code ./etc/kafka/connect-distributed.properties
 >>>>>
- /Users/2dongyeop/Developments/kafka-demo/confluentinc-kafka-connect-jdbc-10.8.0/lib
+ plugin.path=/Users/2dongyeop/Developments/kafka-demo/confluentinc-kafka-connect-jdbc-10.8.0/lib
 <<<<< EOF
 ```
 
@@ -1131,5 +1124,92 @@ $ code ./etc/kafka/connect-distributed.properties
 ```shell
 # Order Service에 mariadb-java-client 의존성을 추가했다면 로컬 mvn repository에 jar이 존재.
 cp /Users/2dongyeop/.m2/repository/org/mariadb/jdbc/mariadb-java-client/2.7.2/mariadb-java-client-2.7.2.jar \
-   /Users/2dongyeop/Developments/kafka-demo/confluent-6.1.0/share/java/kafka
+   /Users/2dongyeop/Developments/kafka-demo/confluent-7.1.1/share/java/kafka
 ```
+
+### 3. Kafka Source/Sink Connector 실행
+
+#### Kafka Connect 실행
+
+```shell
+# Connect가 설치된 위치에서
+$ ./bin/connect-distributed ./etc/kafka/connect-distributed.properties
+```
+
+#### Kafka Source Connect 추가
+
+```shell
+POST localhost:8083/connectors # Connector 주소
+BODY
+{
+    "name": "my-source-connect",
+    "config": {
+        "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+        "connection.url": "jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true",
+        "connection.user": "root",
+        "connection.password": "test1234",
+        "mode": "incrementing",
+        "incrementing.column.name": "id",
+        "table.whitelist": "users",
+        "topic.prefix": "my_topic_",
+        "tasks.max": "1"
+    }
+}
+```
+
+#### Kafka Source Connect 조회
+
+```shell
+# 목록 조회
+curl localhost:8083/connectors
+
+# 상세 조회
+curl localhost:8083/connectors/my-source-connect
+```
+
+#### Kafka Source Connect 동작 확인
+
+1. Consumer 기동
+
+```shell
+./bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic my-source-connect --from-beginning
+```
+
+2. MySQL 접속 후 데이터 삽입
+
+```sql
+insert into users(user_id, pwd, name)
+values ('user1', 'test1111', 'username');
+```
+
+3. Consumer 로그 확인
+
+```text
+{"schema":{"type":"struct","fields":[{"type":"int32","optional":false,"field":"id"},{"type":"string","optional":true,"field":"user_id"},{"type":"string","optional":true,"field":"pwd"},{"type":"string","optional":true,"field":"name"},{"type":"int64","optional":true,"name":"org.apache.kafka.connect.data.Timestamp","version":1,"field":"created_at"}],"optional":false,"name":"users"},"payload":{"id":1,"user_id":"user1","pwd":"test1111","name":"username","created_at":1729631568000}}
+```
+
+#### Kafka Sink Connect 추가
+- 등록과 동시에 DB에 `my_topic_users` 테이블이 생성되며,
+- `user` 테이블에서 변경사항이 생길 경우 `my_topic_users` 테이블에 함께 적용됨.
+  - → 이러한 점을 토대로 데이터를 옮기는 ETL 용도로 사용 가능. 
+```shell
+POST localhost:8083/connectors # Connector 주소
+BODY
+{
+    "name": "my-sink-connect",
+    "config": {
+        "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+        "connection.url": "jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true",
+        "connection.user": "root",
+        "connection.password": "test1234",
+        "auto.create": "true",
+        "auto.evolve": "true",
+        "delete.enabled": "false",
+        "tasks.max": "1",
+        "topics": "my_topic_users"
+    }
+}
+```
+
+
+

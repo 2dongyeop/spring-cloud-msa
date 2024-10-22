@@ -6,7 +6,7 @@ spring:
     name: order-service
 
   datasource:
-    url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
     password: test1234
     driver-class-name: org.mariadb.jdbc.Driver
@@ -20,8 +20,8 @@ spring:
         format_sql: true
     show-sql: true
     generate-ddl: true
-#    database: mysql
-#    database-platform: org.hibernate.dialect.MySQLDialect
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQLDialect
 
 
 eureka:
