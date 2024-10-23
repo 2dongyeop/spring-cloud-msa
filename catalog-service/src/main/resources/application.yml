@@ -6,10 +6,10 @@ spring:
     name: catalog-service
 
   datasource:
-    url: jdbc:h2:tcp://localhost/~/testdb
-    username: sa
-    password:
-    driver-class-name: org.h2.Driver
+    url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: test1234
+    driver-class-name: org.mariadb.jdbc.Driver
 
   jpa:
     hibernate:
@@ -21,10 +21,12 @@ spring:
     show-sql: true
     generate-ddl: true
     defer-datasource-initialization: true
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQLDialect
+
   sql:
     init:
       mode: always
-
 
 eureka:
   instance:

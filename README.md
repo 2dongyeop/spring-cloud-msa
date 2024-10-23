@@ -1189,9 +1189,11 @@ values ('user1', 'test1111', 'username');
 ```
 
 #### Kafka Sink Connect 추가
+
 - 등록과 동시에 DB에 `my_topic_users` 테이블이 생성되며,
 - `user` 테이블에서 변경사항이 생길 경우 `my_topic_users` 테이블에 함께 적용됨.
-  - → 이러한 점을 토대로 데이터를 옮기는 ETL 용도로 사용 가능. 
+    - → 이러한 점을 토대로 데이터를 옮기는 ETL 용도로 사용 가능.
+
 ```shell
 POST localhost:8083/connectors # Connector 주소
 BODY
@@ -1211,5 +1213,151 @@ BODY
 }
 ```
 
+### 4. Kafka를 이용한 데이터 동기화 구성
+
+- 사전 배경 : 아래와 같이 구성한 뒤, kafka & zookeeper 서버를 기동한 상태
+- 동작 확인 : 주문을 생성할 경우, Catalog의 Stock이 감소하는지 확인
+
+#### Kafka Consumer 구성
+
+1. 의존성 추가
+    ```xml
+    <dependency>
+        <groupId>org.springframework.kafka</groupId>
+        <artifactId>spring-kafka</artifactId>
+    </dependency>
+    ```
+
+2. KafkaConsumerConfig 작성
+
+  ```java
+
+@EnableKafka
+@Configuration
+public class KafkaConsumerConfig {
+
+    @Value("${kafka.server.ip:localhost:9092}")
+    private String kafkaServerIp;
+
+    @Bean
+    public ConsumerFactory<String, String> consumerFactory() {
+        final HashMap<String, Object> properties = new HashMap<>();
+        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServerIp);
+        // 다수의 Consumer 가 존재할 경우, 특정 그룹만이 소비하도록 할 수 있음.
+        // 현재처럼 1개의 Consumer 만 존재할 경우에는 아무 소용x
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, "consumerGroupId");
+        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+
+        return new DefaultKafkaConsumerFactory<>(properties);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
+        final ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory = new ConcurrentKafkaListenerContainerFactory<>();
+        kafkaListenerContainerFactory.setConsumerFactory(consumerFactory());
+
+        return kafkaListenerContainerFactory;
+    }
+}
+  ```
+
+3. KafkaConsumer 작성
+    ```java
+    @Slf4j
+    @Service
+    @RequiredArgsConstructor
+    public class KafkaConsumer {
+    
+        private final CatalogRepository catalogRepository;
+    
+        @KafkaListener(topics = "example-catalog-topic")
+        public void updateQty(final String kafkaMessage) {
+            log.info("kafkaMessage[{}]", kafkaMessage);
+    
+            final ObjectMapper mapper = new ObjectMapper();
+            HashMap<Object, Object> map = new HashMap<>();
+    
+            try {
+                map = mapper.readValue(kafkaMessage, new TypeReference<>() {
+                });
+            } catch (JsonProcessingException jsonProcessingException) {
+                log.error("", jsonProcessingException);
+            }
+    
+            /* 비즈니스 로직.. */
+            final CatalogEntity catalog = catalogRepository.findByProductId(map.get("productId").toString());
+            log.info("catalog[{}]", catalog);
+    
+            if (catalog != null) {
+                catalog.setStock(catalog.getStock() - (Integer) map.get("qty"));
+                catalogRepository.save(catalog);
+            }
+        }
+    }
+    ```
+
+#### Kafka Producer 구성
+
+1. 의존성 추가
+    ```xml
+    <dependency>
+        <groupId>org.springframework.kafka</groupId>
+        <artifactId>spring-kafka</artifactId>
+    </dependency>
+    ```
+
+2. KafkaProducerConfig 작성
+    ```java
+    @EnableKafka
+    @Configuration
+    public class KafkaProducerConfig {
+    
+        @Value("${kafka.server.ip:localhost:9092}")
+        private String kafkaServerIp;
+    
+        @Bean
+        public ProducerFactory<String, String> producerFactory() {
+            final HashMap<String, Object> properties = new HashMap<>();
+            properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaServerIp);
+            properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+            properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+    
+            return new DefaultKafkaProducerFactory<>(properties);
+        }
+    
+        @Bean
+        public KafkaTemplate<String, String> kafkaTemplate() {
+            return new KafkaTemplate<>(producerFactory());
+        }
+    }
+    ```
 
 
+3. KafkaProducer 작성
+    ```java
+    @Slf4j
+    @Service
+    @RequiredArgsConstructor
+    public class KafkaProducer {
+    
+        private final KafkaTemplate<String, String> kafkaTemplate;
+    
+        public OrderDto send(String topic, OrderDto orderDto) {
+    
+            final ObjectMapper mapper = new ObjectMapper();
+            String json = "";
+    
+            try {
+                json = mapper.writeValueAsString(orderDto);
+            } catch (JsonProcessingException e) {
+                log.error("", e);
+            }
+    
+            kafkaTemplate.send(topic, json);
+            log.info("[Kafka] to Order microService : {}", orderDto);
+    
+            return orderDto;
+        }
+    }
+    ```

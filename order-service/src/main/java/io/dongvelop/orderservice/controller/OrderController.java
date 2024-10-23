@@ -2,6 +2,7 @@ package io.dongvelop.orderservice.controller;
 
 import io.dongvelop.orderservice.dto.OrderDto;
 import io.dongvelop.orderservice.jpa.OrderEntity;
+import io.dongvelop.orderservice.messagequeue.KafkaProducer;
 import io.dongvelop.orderservice.service.OrderService;
 import io.dongvelop.orderservice.vo.RequestOrder;
 import io.dongvelop.orderservice.vo.ResponseOrder;
@@ -34,6 +35,7 @@ public class OrderController {
 
     private final Environment env;
     private final OrderService orderService;
+    private final KafkaProducer kafkaProducer;
 
     @PostMapping("/{userId}/orders")
     public ResponseEntity<ResponseOrder> createOrder(@RequestBody RequestOrder orderDetails,
@@ -42,11 +44,15 @@ public class OrderController {
         ModelMapper mapper = new ModelMapper();
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 
+        /* JPA 관련 작업 */
         OrderDto orderDto = mapper.map(orderDetails, OrderDto.class);
         orderDto.setUserId(userId);
         OrderDto createdOrder = orderService.createOrder(orderDto);
 
         ResponseOrder responseOrder = mapper.map(createdOrder, ResponseOrder.class);
+
+        /* Kafka : Send Order */
+        kafkaProducer.send("example-catalog-topic", orderDto);
 
         return ResponseEntity.status(CREATED).body(responseOrder);
     }
