@@ -32,6 +32,8 @@ public class OrderEntity implements Serializable {
 
     @Column(nullable = false, unique = true)
     private String userId;
+    @Column(nullable = false, unique = true)
+    private String orderId;
 
     @Column
     private Date createdAt;

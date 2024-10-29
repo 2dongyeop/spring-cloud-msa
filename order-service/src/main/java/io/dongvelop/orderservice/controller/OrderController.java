@@ -3,6 +3,7 @@ package io.dongvelop.orderservice.controller;
 import io.dongvelop.orderservice.dto.OrderDto;
 import io.dongvelop.orderservice.jpa.OrderEntity;
 import io.dongvelop.orderservice.messagequeue.KafkaProducer;
+import io.dongvelop.orderservice.messagequeue.OrderProducer;
 import io.dongvelop.orderservice.service.OrderService;
 import io.dongvelop.orderservice.vo.RequestOrder;
 import io.dongvelop.orderservice.vo.ResponseOrder;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.CREATED;
 
@@ -36,24 +38,29 @@ public class OrderController {
     private final Environment env;
     private final OrderService orderService;
     private final KafkaProducer kafkaProducer;
+    private final OrderProducer orderProducer;
 
     @PostMapping("/{userId}/orders")
-    public ResponseEntity<ResponseOrder> createOrder(@RequestBody RequestOrder orderDetails,
-                                                     @PathVariable String userId) {
+    public ResponseEntity<ResponseOrder> createOrder(@RequestBody RequestOrder orderDetails, @PathVariable String userId) {
 
         ModelMapper mapper = new ModelMapper();
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 
-        /* JPA 관련 작업 */
         OrderDto orderDto = mapper.map(orderDetails, OrderDto.class);
         orderDto.setUserId(userId);
-        OrderDto createdOrder = orderService.createOrder(orderDto);
+        /* JPA 관련 작업 */
+//        OrderDto createdOrder = orderService.createOrder(orderDto);
+//        ResponseOrder responseOrder = mapper.map(createdOrder, ResponseOrder.class);
 
-        ResponseOrder responseOrder = mapper.map(createdOrder, ResponseOrder.class);
+        /* kafka */
+        orderDto.setOrderId(UUID.randomUUID().toString());
+        orderDto.setTotalPrice(orderDetails.getQty() * orderDetails.getUnitPrice());
 
         /* Kafka : Send Order */
         kafkaProducer.send("example-catalog-topic", orderDto);
+        orderProducer.send("orders", orderDto);
 
+        final ResponseOrder responseOrder = mapper.map(orderService.createOrder(orderDto), ResponseOrder.class);
         return ResponseEntity.status(CREATED).body(responseOrder);
     }
 
