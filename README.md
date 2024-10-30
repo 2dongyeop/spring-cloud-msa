@@ -5,32 +5,33 @@
 
 ## 목차
 
-- [Spring Cloud Netflix Eureka](#1-spring-cloud-netflix-eureka)
+1. [Spring Cloud Netflix Eureka](#1-spring-cloud-netflix-eureka)
     - [Eureka Server](#11-eureka-server)
-- [API Gateway(Netflix Zuul, Spring Cloud Gateway)](#2-api-gateway-netflix-zuul-spring-cloud-gateway)
+2. [API Gateway(Netflix Zuul, Spring Cloud Gateway)](#2-api-gateway-netflix-zuul-spring-cloud-gateway)
     - [API Gateway란?](#21-api-gateway란)
     - [Spring Cloud Zuul](#22-spring-cloud-zuul)
     - [Spring Cloud Gateway](#23-spring-cloud-gateway)
     - [Spring Cloud Gateway Filter](#24-spring-cloud-gateway--filter-적용하기)
     - [Spring Cloud Gateway LoadBalancer](#24-spring-cloud-gateway--loadbalancer)
-- [Spring Cloud Config Server](#3-spring-cloud-config-server)
+3. [Spring Cloud Config Server](#3-spring-cloud-config-server)
     - [Spring Cloud Config 적용 방법](#31-spring-cloud-config-적용-방법)
     - [Spring Cloud Config Encrypt/Decrypt](#32-spring-cloud-config-적용-방법)
     - [Config Server의 변경사항을 종료없이 Micro Service에 적용하기](#34-config-server의-변경-값을-micro-service에-적용하기)
-- [Spring Cloud Bus](#4-spring-cloud-bus)
+4. [Spring Cloud Bus](#4-spring-cloud-bus)
     - [AMQP 설명](#41-amqp-설명)
     - [Spring Cloud Bus 동작](#42-spring-cloud-bus-동작-방식)
     - [Spring Cloud Bus 적용](#43-spring-cloud-bus-적용하기)
-- [설정 정보의 암호화 처리](#5-설정-정보의-암호화-처리-)
+5. [설정 정보의 암호화 처리](#5-설정-정보의-암호화-처리-)
     - [암복호화 기본 개념](#51-암호화-기본-개념)
     - [설정파일 암복호화 활성화](#52-설정파일-암복호화-활성화)
-- [MicroService 간 통신](#6-microservice-간-통신)
+6. [MicroService 간 통신](#6-microservice-간-통신)
     - [RestTemplate](#61-resttemplate)
     - [OpenFeign](#62-openfeign)
-- [데이터 동기화를 위한 Apache Kafka 활용](#7-데이터-동기화를-위한-apache-kafka-활용-1)
+7. [데이터 동기화를 위한 Apache Kafka 활용](#7-데이터-동기화를-위한-apache-kafka-활용-1)
     - [Apache Kafka 개요](#7-1-apache-kafka-개요)
     - [Apache Kafka 서버 기동 및 튜토리얼](#7-2-apache-kafka-서버-기동-및-튜토리얼)
     - [Kafka Connect 개요 및 기동](#7-3-kafka-connect)
+8. [장애 처리와 Microservice 분산 추적](#8-장애-처리와-microservice-분산-추적)
 
 <br/>
 
@@ -1358,6 +1359,123 @@ public class KafkaConsumerConfig {
             log.info("[Kafka] to Order microService : {}", orderDto);
     
             return orderDto;
+        }
+    }
+    ```
+
+<br/>
+
+# 8. 장애 처리와 Microservice 분산 추적
+
+## 8-1. CircuitBreaker & Resilience4J
+
+![circuitBreaker01.png](image/circuitBreaker01.png)
+
+### 1. CircuitBreaker 소개
+
+- 장애가 발생하는 서비스에 반복적인 호출을 하지 않도록 차단하는 역할
+- 특정 서비스가 정상적으로 동작하지 않을 경우, 다른 기능으로 대체 수행
+    - → 장애 회피
+
+### 2. CircuitBreaker 적용하기
+
+> AS-IS (Spring Boot 2.3 & Spring Cloud 2020 이전)
+
+1. 의존성 추가
+
+      ```xml
+    <dependency>
+        <groupId>org.springframework.cloyd</groupId>
+        <artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+    </dependency> 
+      ```
+
+2. 활성화 애너테이션 지정
+    ```java
+    @EnableCircuitBreaker
+    public class Application {...}
+    ```
+
+3. 활성화 환경설정 지정
+    ```yaml
+    feign:
+      hystrix:
+        enabled: true
+    ```
+
+<br/>
+
+> TO-BE (Spring Cloud 2020 이후)
+
+- `netflix-hystrix` 가 지원이 종료되어, `Resilience4j` 를 사용
+- 아래 내용 참고
+
+<br/>
+
+### 3. Resilience4j 소개
+
+- Netflix Hystrix 로부터 영감받은 경량 라이브러리 ([출처](https://resilience4j.readme.io/))
+- Fault Tolerance : 에러가 발생해도 정상 서비스 운영이 가능한 성격
+- 내부 기능
+    - resilience4j-circuitbreaker
+    - resilience4j-ratelimiter
+    - resilience4j-bulkhead
+    - resilience4j-retry (sync and async)
+    - resilience4j-timelimiter
+    - resilience4j-cache (Result caching)
+
+<br/>
+
+### 4. Resilience4j 적용하기
+
+> Default Configuration 이용 시
+
+1. 의존성 추가
+    ```xml
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+    </dependency>
+    ```
+
+2. 코드 작성
+    ```java
+    @Autowired
+    private CircuitBreakerFactory circuitBreakerFactory;
+    
+    ...
+    
+    CircuitBreaker circuitBreaker = circuitBreakerFactory.create("circuitbreaker");
+    List<ResponseOrder> ordersList = circuitBreaker.run(() -> orderServiceClient.getOrders(userId),
+            throwable -> new ArrayList<>());
+    ```
+
+<br/> 
+
+> Custom Configuration 이용 시
+
+1. 설정 클래스 작성
+   ```java
+    @Configuration
+    public class Resilience4jConfiguration {
+        @Bean
+        public Customizer<Resilience4JCircuitBreakerFactory> globalCustomCircuitBreakerFactory() {
+            /*
+             * failureRateThreshold() : CircuitBreaker를 활성화(open) 할 지를 결정하는 실패 비율. 기본 50
+             * waitDurationInOpenState() : CircuitBreaker 활성화 상태를 유지하는 지속 시간. 기본값 60s
+             * slidingWindowType() 
+                - CircuitBreaker가 비활성화(closed)될 때 통화 결과를 기록하는 데에 사용되는 슬라이딩 창의 유형
+                - 카운트 기반/시간 기반 
+             * slidingWindowSize() 
+                - CircuitBreaker가 비활성화(closed)될 때 호출 결과를 기록하는 데에 사용되는 슬라이딩 창의 크기 구성
+                - 기본값 100
+             */
+            CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+                    .failureRateThreshold(50) 
+                    .waitDurationInOpenState(Duration.ofMillis(60000))
+                    .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
+                    .slidingWindowSize(100)
+                    .build();
         }
     }
     ```

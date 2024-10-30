@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +41,7 @@ public class UserServiceImpl implements UserService {
     private final BCryptPasswordEncoder passwordEncoder;
     private final RestTemplate restTemplate;
     private final OrderServiceClient orderServiceClient;
+    private final CircuitBreakerFactory circuitBreakerFactory;
 
 
     @Value("${url.order-service.order}")
@@ -85,7 +88,11 @@ public class UserServiceImpl implements UserService {
 
 
         /* 2. Using Openfeign & Error Decoder */
-        orderList = orderServiceClient.getOrders(userId);
+//        orderList = orderServiceClient.getOrders(userId);
+
+        /* 3. Using Default CircuitBreaker */
+        final CircuitBreaker circuitbreaker = circuitBreakerFactory.create("circuitbreaker");
+        orderList = circuitbreaker.run(() -> orderServiceClient.getOrders(userId), throwable -> new ArrayList<>());
 
         userDto.setOrders(orderList);
         return userDto;
