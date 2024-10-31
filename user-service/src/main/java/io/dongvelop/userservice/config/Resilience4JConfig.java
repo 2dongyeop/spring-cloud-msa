@@ -1,7 +1,9 @@
 package io.dongvelop.userservice.config;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
 import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
+import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JConfigBuilder;
 import org.springframework.cloud.client.circuitbreaker.Customizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,11 +30,24 @@ public class Resilience4JConfig {
              - CircuitBreaker가 비활성화(closed)될 때 호출 결과를 기록하는 데에 사용되는 슬라이딩 창의 크기 구성
              - 기본값 100
           */
-        CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+        final CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
                 .failureRateThreshold(50)
                 .waitDurationInOpenState(Duration.ofMillis(60000))
                 .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
                 .slidingWindowSize(100)
                 .build();
+
+        /*
+         * TimeLimiter : n초 동안의 응답이 없을 경우, 에러로 간주
+         * default : 1초
+         */
+        final TimeLimiterConfig timeLimiterConfig = TimeLimiterConfig.custom()
+                .timeoutDuration(Duration.ofSeconds(1))
+                .build();
+
+        return factory -> factory.configureDefault(id -> new Resilience4JConfigBuilder(id)
+                .timeLimiterConfig(timeLimiterConfig)
+                .circuitBreakerConfig(circuitBreakerConfig)
+                .build());
     }
 }

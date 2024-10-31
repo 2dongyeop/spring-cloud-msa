@@ -32,6 +32,7 @@
     - [Apache Kafka 서버 기동 및 튜토리얼](#7-2-apache-kafka-서버-기동-및-튜토리얼)
     - [Kafka Connect 개요 및 기동](#7-3-kafka-connect)
 8. [장애 처리와 Microservice 분산 추적](#8-장애-처리와-microservice-분산-추적)
+    - [Circuitbreaker & Resilience4j](#8-1-circuitbreaker--resilience4j)
 
 <br/>
 
@@ -1470,12 +1471,25 @@ public class KafkaConsumerConfig {
                 - CircuitBreaker가 비활성화(closed)될 때 호출 결과를 기록하는 데에 사용되는 슬라이딩 창의 크기 구성
                 - 기본값 100
              */
-            CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
+            final CircuitBreakerConfig circuitBreakerConfig = CircuitBreakerConfig.custom()
                     .failureRateThreshold(50) 
                     .waitDurationInOpenState(Duration.ofMillis(60000))
                     .slidingWindowType(CircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
                     .slidingWindowSize(100)
                     .build();
+   
+            /* 
+             * TimeLimiter : n초 동안의 응답이 없을 경우, 에러로 간주
+             * default : 1초 
+             */
+            final TimeLimiterConfig timeLimiterConfig = TimeLimiterConfig.custom()
+                    .timeoutDuration(Duration.ofSeconds(1))
+                    .build();
+
+            return factory -> factory.configureDefault(id -> new Resilience4JConfigBuilder(id)
+                    .timeLimiterConfig(timeLimiterConfig)
+                    .circuitBreakerConfig(circuitBreakerConfig)
+                    .build());
         }
     }
     ```
