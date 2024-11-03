@@ -33,6 +33,7 @@
     - [Kafka Connect 개요 및 기동](#7-3-kafka-connect)
 8. [장애 처리와 Microservice 분산 추적](#8-장애-처리와-microservice-분산-추적)
     - [Circuitbreaker & Resilience4j](#8-1-circuitbreaker--resilience4j)
+    - [Zipkin을 이용한 Microservice 분산 추적 구현](#8-2-zipkin을-이용한-microservice-분산-추적)
 
 <br/>
 
@@ -1493,3 +1494,81 @@ public class KafkaConsumerConfig {
         }
     }
     ```
+
+<br/>
+
+## 8-2. Zipkin을 이용한 Microservice 분산 추적
+
+### 1. [Zipkin](https://zipkin.io/) 소개
+
+- Twitter에서 사용하는 분산 환경의 Timing 데이터 수집, 추적 오픈소스
+- 분산환경에서의 시스템 병목 현상 파악
+- Collector, Query Service(API), Database(Storage), Web UI로 구성
+
+<br/>
+
+> Span과 Trace
+> - Span : 하나의 요청에서 사용되는 작업의 단위
+> - Trace : 하나의 요청에 대한 같은 Trace ID 발급(트리 구조로 이루어진 Span 셋)
+
+<br/> 
+
+### 2. ~~Spring Cloud Sleuth~~ Micrometer-Tracing
+
+- **Spring Boot 3.x 부터는 Sleuth가 Deprecated되어 Micrometer-tracing을 사용해야 함.**
+- 스프링부트 애플리케이션을 Zipkin과 연동
+- 요청 값에 따른 Trace ID, Span ID를 부여
+
+<br/>
+
+### 3. Zipkin 분산 추적 구성
+
+1. Zipkin 기동
+
+```shell
+# Docker 이용시 (설치하여 사용하는 방식은 생략.)
+$ docker run -d -p 9411:9411 openzipkin/zipkin
+```
+
+2. Zipkin 및 Micrometer Tracing 의존성 추가
+
+```xml
+<!-- Micrometer Tracing으로 MSA 분산 추적 구현 -->
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-tracing-bridge-brave</artifactId>
+</dependency>
+
+        <!-- 분산 추적 내용을 zipkin으로 모니터링 -->
+<dependency>
+<groupId>io.zipkin.reporter2</groupId>
+<artifactId>zipkin-reporter-brave</artifactId>
+</dependency>
+``` 
+
+3. 설정파일에 zipkin 주소 및 샘플링 설정 추가
+
+```yaml
+ management:
+   tracing:
+     sampling:
+       probability: 1.0   # 로그 샘플링 비율 - 1.0일 경우에는 100% 로그를 샘플링, default : 0.1
+     propagation: # 추적 정보 전파 방식 (wbc, b3, b3_multi)
+       produce: b3_multi  # 추적 정보를 여러 개의 헤더로 나누어 전송
+       consume: b3        # HTTP 헤더를 사용하여 추적 ID, 스팬 ID 등을 전달
+
+   zipkin:
+     tracing:
+       endpoint: "http://localhost:9411/api/v2/spans"
+
+ logging:
+   pattern:
+     level: "%5p [%X{traceId:-},%X{spanId:-}]"
+```
+
+4. Zipkin UI에서 요청 추적
+
+- 우측 검색 창에 Trace ID 입력 시, 확인 가능
+  ![zipkin.png](image/zipkin.png)
+
+<br/>

@@ -90,9 +90,11 @@ public class UserServiceImpl implements UserService {
         /* 2. Using Openfeign & Error Decoder */
 //        orderList = orderServiceClient.getOrders(userId);
 
+        log.info("Before call Order Microservice");
         /* 3. Using Default CircuitBreaker */
         final CircuitBreaker circuitbreaker = circuitBreakerFactory.create("circuitbreaker");
         orderList = circuitbreaker.run(() -> orderServiceClient.getOrders(userId), throwable -> new ArrayList<>());
+        log.info("After call Order Microservice");
 
         userDto.setOrders(orderList);
         return userDto;
