@@ -6,6 +6,7 @@ import io.dongvelop.userservice.service.UserService;
 import io.dongvelop.userservice.vo.Greeting;
 import io.dongvelop.userservice.vo.RequestUser;
 import io.dongvelop.userservice.vo.ResponseUser;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -62,6 +63,10 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(responseUser);
     }
 
+    /*
+     *
+     */
+    @Timed(value = "users.status", longTask = true)
     @GetMapping("/health_check")
     public String status() {
         log.debug("health_check health_check");
@@ -75,6 +80,7 @@ public class UserController {
                 ;
     }
 
+    @Timed(value = "users.welcome", longTask = true)
     @GetMapping("/welcome")
     public String welcome() {
         return greeting.getMessage();

@@ -34,6 +34,9 @@
 8. [장애 처리와 Microservice 분산 추적](#8-장애-처리와-microservice-분산-추적)
     - [Circuitbreaker & Resilience4j](#8-1-circuitbreaker--resilience4j)
     - [Zipkin을 이용한 Microservice 분산 추적 구현](#8-2-zipkin을-이용한-microservice-분산-추적)
+9. [Microservice 모니터링](#9-마이크로서비스-모니터링)
+    - [Micrometer 개요 및 구성](#9-1-micrometer-개요-및-구현)
+    - [Prometheus 및 Grafana 를 이용한 모니터링 대시보드 구성](#9-2-prometheus-grafana를-이용한-모니터링-dashboad-구성)
 
 <br/>
 
@@ -1570,5 +1573,67 @@ $ docker run -d -p 9411:9411 openzipkin/zipkin
 
 - 우측 검색 창에 Trace ID 입력 시, 확인 가능
   ![zipkin.png](image/zipkin.png)
+
+<br/>
+
+# 9. 마이크로서비스 모니터링
+
+## 9-1. Micrometer 개요 및 구현
+
+### 1. Micrometer 개요
+
+- 이전에는 Hystrix Dashboard / Turbin을 이용했지만, Spring 5 & Spring Boot 2부터 Deprecated 되어 [Micromter](https://micrometer.io)를
+  사용해야 함.
+- JVM 기반의 애플리케이션의 Metrics 제공
+- Prometheus 등의 다양한 모니터링 시스템 제공
+
+<br/>
+
+> Timer란?
+> - 짧은 지연시간, 이벤트의 사용 빈도를 측정
+> - 시계열로 이벤트의 시간, 호출 빈도 등을 제공
+> - `@Timed` 애너테이션 제공
+
+<br/>
+
+### 2. Micrometer 구현
+
+1. 의존성 추가
+    ```xml
+    <!-- 사전에 actuator를 추가해놓았다는 가정.-->
+    <!-- Micrometer 지표를 Prometheus로 보내는 라이브러리 -->
+    <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    ```
+
+2. 설정파일에서 endpoints 추가
+    ```yaml
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: health, httptrace, info, metrics, prometheus
+    ```
+
+3. (필수 아님) 원하는 지표가 있을 경우, `@Timed` 애너테이션 활용
+    - 해당 애너테이션은 API 레벨에서 관리되며, API가 호출될 경우 집계됨.
+    - 이후, 몇번 호출 되었는지 등을 집계할 수 있음.
+    ```java
+    @Timed(value = "users.status", longTask = true)
+    @GetMapping("/health_check")
+    public String status() {
+        log.debug("health_check health_check");
+    
+        return "[User Service]\n" + String.format("It's Working in User Service on PORT %s",
+                env.getProperty("local.server.port")) + "\ntoken.expiration_time =" + env.getProperty("token.expiration_time")
+                + "\ntoken.secret = " + env.getProperty("token.secret");
+    }
+    ```
+
+<br/>
+
+## 9-2. Prometheus, Grafana를 이용한 모니터링 Dashboad 구성
 
 <br/>

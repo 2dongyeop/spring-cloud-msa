@@ -33,6 +33,11 @@ eureka:
       defaultZone: http://127.0.0.1:8761/eureka
 
 management:
+  endpoints:
+    web:
+      exposure:
+        include: health, httptrace, info, metrics, prometheus
+
   tracing:
     sampling:
       probability: 1.0   # 로그 샘플링 비율 - 1.0일 경우에는 100% 로그를 샘플링, default : 0.1

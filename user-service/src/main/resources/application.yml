@@ -50,7 +50,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: refresh, health, beans, busrefresh
+        include: refresh, health, beans, busrefresh, info, metrics, prometheus
         # refresh : Config Server에서 가져온 정보를 refresh하기 위함
         # = Config Server에서 정보가 변경되었을때, 이 엔드포인트를 호출하면 MS를 재기동할 필요가 없음
         # 다른 엔드포인트와 다르게 POST 방식으로 요청
