@@ -1637,3 +1637,123 @@ $ docker run -d -p 9411:9411 openzipkin/zipkin
 ## 9-2. Prometheus, Grafana를 이용한 모니터링 Dashboad 구성
 
 <br/>
+
+### 1. Prometheus 소개
+
+- Metrics 를 수집하고 모니터링 및 알람에 사용되는 오픈소스 애플리케이션
+- 2016년부터 CNCF에서 관리되는 2번쨰 공식 프로젝트
+- Pull 방식의 구조와 다양한 Metric Exporter 제공
+- 시계열 DB에 Metrics 저장 → Query(조회) 가능
+
+### 2. Grafana 소개
+
+- 데이터 시각화, 모니터링 및 분석을 위한 오픈소스 애플리케이션
+- 시계열 데이터를 시각화하기 위한 대시보드 제공
+
+### 3. Prometheus, Grafana 설치
+
+#### Docker Compose 파일 작성
+
+> docker-compose-prometheus-grafana.yml
+
+```yaml
+version: '3.8'
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus/config:/etc/prometheus
+      - ./prometheus/volume:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--web.enable-lifecycle"
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - promnet # 네트워크를 promnet로 설정
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "6300:3000"
+    volumes:
+      - ./grafana/volume:/var/lib/grafana
+    networks:
+      - promnet # promnet 네트워크에 연결
+
+networks:
+  promnet:
+    driver: bridge # bridge 네트워크 사용
+```
+
+<br/> 
+
+#### prometheus.yml 파일 작성
+
+위치 : `{docker-compose.prometheus.yml 경로}/prometheus/config`
+
+```yaml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# AlterManager
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+
+rule_files:
+#  - "rule.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: [ 'localhost:9090' ]
+
+  - job_name: 'apigateway-service'
+    scrape_interval: 15s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      #      - targets: [ 'localhost:8000' ] # API 서버는 Docker 로 기동하지 않으므로, 직접 IP 혹은 DNS 명시.
+      - targets: [ '192.168.0.2:8000' ] # API Gateway 주소
+
+  - job_name: 'user-service'
+    scrape_interval: 15s
+    metrics_path: /user-service/actuator/prometheus
+    static_configs:
+      - targets: [ '192.168.0.2:8000' ] # API Gateway 주소
+```
+
+<br/>
+
+#### Prometheus & Grafana 실행
+
+```shell
+docker-compose -f ../docker/docker-compose-prometheus-grafana.yml up
+```
+
+<br/>
+
+#### Prometheus & Grafana 접속
+
+- Prometheus : http://localhost:8080
+- Grafana : http://localhost:6300
+    - 초기 비밀번호 : admin/admin
+
+<br/>
+
+#### 이후 작업
+
+1. Grafana DataSource 연결
+2. Grafana Dashboard 연결 (metric 이름이 다를 경우는 직접 수정 필요)
+3. 필요시 알람 설정 추가
+
+<br/>
+
+#### 최종 작업본.
+
+![grafana-01.png](image/grafana-01.png)
+

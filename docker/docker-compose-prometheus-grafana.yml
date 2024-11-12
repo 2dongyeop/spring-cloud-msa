@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus/config:/etc/prometheus
+      - ./prometheus/volume:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - "--web.enable-lifecycle"
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - promnet # 네트워크를 promnet로 설정
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "6300:3000"
+    volumes:
+      - ./grafana/volume:/var/lib/grafana
+    networks:
+      - promnet # promnet 네트워크에 연결
+
+networks:
+  promnet:
+    driver: bridge # bridge 네트워크 사용
