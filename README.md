@@ -37,6 +37,9 @@
 9. [Microservice 모니터링](#9-마이크로서비스-모니터링)
     - [Micrometer 개요 및 구성](#9-1-micrometer-개요-및-구현)
     - [Prometheus 및 Grafana 를 이용한 모니터링 대시보드 구성](#9-2-prometheus-grafana를-이용한-모니터링-dashboad-구성)
+10. [배포를 위한 컨테이너 가상화](#10-배포를-위한-컨테이너-가상화)
+    - [Virtualization](#10-1-virtualization)
+    - [Docker](#10-2-docker)
 
 <br/>
 
@@ -1757,3 +1760,190 @@ docker-compose -f ../docker/docker-compose-prometheus-grafana.yml up
 
 ![grafana-01.png](image/grafana-01.png)
 
+<br/>
+
+# 10. 배포를 위한 컨테이너 가상화
+
+## 10-1. Virtualization
+
+### 가상화 개념 소개
+
+- 물리적인 컴퓨터 리소스를 다른 시스템이나 애플리케이션에서 사용할 수 있도록 제공
+    - 플랫폼 가상화
+    - 리소스 가상화
+- 하이퍼바이저(`Hypervisor`)
+    - Virtual Machine Manager(`VMM`)
+    - 다수의 운영체제를 동시에 실행하기 위한 논리적 플랫폼
+    - Type 1: `Native or Bare-metal`
+        - 하드웨어에 직접 하이퍼바이저를 설치 후, 여러 OS를 구성
+    - Type 2: `Hosted`
+        - 하드웨어에 OS를 설치 후, 그 위에 Hypervisor 기능을 사용할 수 있는 Software를 설치
+        - Docker 는 Hosted에 해당
+- OS Virtualization
+    - Host OS 위에 Guest OS 전체를 가상화
+    - VMWare, VirtualBox
+    - 자유도가 높으나, 시스템에 부하가 많고 느려짐
+- Container Virtualization
+    - Host OS가 가진 리소스를 적게 사용하며, 필요한 프로세스 실행
+    - 최소한의 라이브러리와 도구만을 포함
+    - Container의 생성 속도 빠름
+
+<br/>
+
+### 컨테이너 관련 개념 설명
+
+- `Container Image`
+    - 컨테이너 실행에 필요한 설정 값.
+    - Image를 가지고 실체화할 경우 컨테이너에 해당.
+- `Public Registry`
+    - [Docker hub](https://hub.docker.com/)에 해당.
+    - 공개된 저장소에 이미지를 저장해놓는 방식.
+    - 마찬가지로 Private Registry도 존재.
+- `Docker Host`
+    - 컨테이너 서버 자체를 의미.
+    - 여러 이미지를 명령어를 통해 컨테이너로 기동.
+        - create : 컨테이너 생성
+        - start : 컨테이너 실행
+        - run : Registry로부터 이미지를 다운받은 후, create & start.
+
+<br/>
+
+### Dockerfile
+
+- Docker Image를 생성하기 위한 스크립트 파일
+- 자체 DSL(Domain-Specific Language) 언어 사용 → 이미지 생성과정을 기술
+
+    ```dockerfile
+    # 이미지를 생성할 대상 서버
+    FROM mysql:5.7 
+    
+    # 필요한 환경변수
+    ENV MYSQL_ALLOW_EMPTY_PASSWORD true
+    ENV MYSQL_DATABASE mydb
+    
+    # 로컬과 이미지의 볼륨을 마운트
+    ADD ../db_mount /var/lib/mysql
+    
+    # 외부에 오픈할 포트
+    EXPOSE 3306
+    
+    # 이미지가 실행된 다음 최종적으로 실핼할 명령어
+    CMD ["mysqld"]
+    ```
+
+<br/>
+
+## 10-2. Docker
+
+### Docker Desktop 설치 링크
+
+- https://docs.docker.com/desktop/setup/install/mac-install/
+
+![img](image/docker-desktop-01.png)
+
+### Docker Command 맛보기
+
+1. 설치된 도커 정보 조회
+
+```shell
+$ docker info
+
+Client:
+ Context:    default
+ Debug Mode: false
+ ...
+
+Server:
+ Containers: 3
+  Running: 0
+  Paused: 0
+  Stopped: 3
+ Images: 25
+ Server Version: 20.10.21
+ ...
+```
+
+2. 설치된 이미지 목록 조회
+
+```shell
+$ docker image ls
+
+REPOSITORY                      TAG            IMAGE ID       CREATED         SIZE
+openzipkin/zipkin               latest         31b486c2db0e   5 weeks ago     186MB
+ngrinder-agent-ngrinder-agent   latest         6c0c2c76f99f   2 months ago    498MB
+ngrinder-ngrinder_agent         latest         ffb4ae04b6ca   2 months ago    498MB
+ngrinder-ngrinder-controller    latest         64ed23b0dc02   2 months ago    573MB
+ubuntu/mysql                    edge           f546ffb82146   3 months ago    347MB
+openzipkin/zipkin-slim          latest         6af41204b540   5 months ago    149MB
+redis                           7.2-alpine     ed518de838a3   5 months ago    42MB
+rabbitmq                        3-management   3a04ce433a99   8 months ago    235MB
+prom/prometheus                 latest         afd08f0aa7c0   13 months ago   240MB
+grafana/grafana                 latest         0a3c9111b0d7   13 months ago   381MB
+mysql                           8.0            a5e6f938c138   16 months ago   587MB
+wurstmeister/kafka              2.12-2.5.0     0fbb91a7ef0b   2 years ago     498MB
+wurstmeister/zookeeper          latest         3f43f72cb283   5 years ago     510MB
+rmohr/activemq                  latest         7c58d2d8d6af   6 years ago     569MB
+```
+
+3. 기동중인 컨테이너 목록 조회
+
+```shell
+$ docker container ls
+
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
+
+<br/>
+
+## 3. Docker 컨테이너 실행하기
+
+### 컨테이너 실행
+
+```shell
+$ docker run [OPTIONS] IMAGE[:TAG|@DIGEST] [COMMAND][ARG...]
+# 옵션 예시
+# -d : 백그라운드 모드(detached mode)
+# -p : 호스트와 컨테이너의 포트를 연결
+# -v : 호스트와 컨테이너의 디렉토리를 연결(마운트)
+# -e : 컨테이너 내에서 사용할 환경변수 설정
+# --name : 컨테이너 이름 설정
+# --rm : 프로세스 종료시 컨테이너 자동 제거
+# -it :  -i와 -t를 동시에 사용한 것으로, 터미널 입력을 위함
+```
+
+<br/>
+
+## 4. Docker 이미지 생성 및 Registry Push
+
+### Dockerfile 작성
+
+```dockerfile
+FROM openjdk:17-ea-11-jdk-slim
+VOLUME /tmp
+
+COPY target/user-service-1.0.0.jar UserService.jar
+
+ENTRYPOINT ["java", "-jar", "UserService.jar"]
+
+```
+
+### Dockerfile 을 이용해 이미지 빌드
+
+```shell
+$ docker build --tag leedongyeop/user-service:1.0.0 . 
+
+# docker image 빌드 결과 확인
+$ docker image ls
+```
+
+### Docker Hub Registry Push
+
+```shell
+$ docker push leedongyeop/user-service:1.0.0    
+```
+
+### Docker Pull
+
+```shell
+$ docker pull leedongyeop/user-service:1.0.0
+```
