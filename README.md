@@ -40,6 +40,8 @@
 10. [배포를 위한 컨테이너 가상화](#10-배포를-위한-컨테이너-가상화)
     - [Virtualization](#10-1-virtualization)
     - [Docker](#10-2-docker)
+11. [애플리케이션 배포 구성](#11-애플리케이션-배포-구성)
+    - [Docker Network 구성](#11-1-docker-network-구성)
 
 <br/>
 
@@ -1947,3 +1949,58 @@ $ docker push leedongyeop/user-service:1.0.0
 ```shell
 $ docker pull leedongyeop/user-service:1.0.0
 ```
+
+<br/>
+
+# 11. 애플리케이션 배포 구성
+
+![application-architecture-01.png](image/application-architecture-01.png)
+
+## 11-1. Docker Network 구성
+
+### 네트워크 종류
+
+1. Bridge Network
+    - `$ docker network create --driver bridge [브릿지 이름]`
+    - 호스트와 별도로 가상의 네트워크를 의미.
+    - **같은 네트워크에 속한 컨테이너의 경우는 IP 주소 외에 컨테이너 ID/Name 으로도 통신 가능.**
+2. Host Network
+    - 네트워클르 호스트로 설정시, 호스트의 네트워크를 그대로 사용
+    - 포트 포워딩 없이 내부 애플리케이션을 사용
+3. None Network
+    - 네트워크를 사용하지 않음.
+    - IO 네트워크만 사용 = 외부와 단절
+
+### 네트워크 작업
+
+```shell
+# Docker 시스템 중 불필요한 리소스 삭제
+$ docker system prune
+WARNING! This will remove:
+  - all stopped containers
+  - all networks not used by at least one container
+  - all dangling images
+  - all dangling build cache
+  
+# 네트워크 조회
+$ docker network ls
+NETWORK ID     NAME      DRIVER    SCOPE
+e48867f99790   bridge    bridge    local
+222116d6dedd   host      host      local
+687781e53556   none      null      local
+
+# 네트워크 생성
+# Gateway & Subnet 을 지정하지 않을 경우, 나중에 직접 IP를 할당시 에러 발생할 수도 있음.
+# 따라서 수동으로 지정하는 것을 추천.
+$ docker network create --gateway 172.18.0.1 --subnet 172.18.0.0/16 ecommerce-network
+
+# 특정 네트워크에 대해 자세히 조회
+# docker network inspect {네트워크명}
+$ docker network inspect ecommerce-network
+```
+
+### 설계 목표
+
+- 아래와 같이 동일한 Docker Network 상에 서버들을 Docker Container로 구성
+- 각각의 서버들은 동일한 Docker Network에 위치하므로, IP 주소 외에도 Container 이름으로 참조 가능.
+  ![application-architecture-02.png](image/application-architecture-02.png)
