@@ -42,6 +42,7 @@
     - [Docker](#10-2-docker)
 11. [애플리케이션 배포 구성](#11-애플리케이션-배포-구성)
     - [Docker Network 구성](#11-1-docker-network-구성)
+    - [각 서비스들 가상화](#11-2-각-서비스들-가상화)
 
 <br/>
 
@@ -2004,3 +2005,16 @@ $ docker network inspect ecommerce-network
 - 아래와 같이 동일한 Docker Network 상에 서버들을 Docker Container로 구성
 - 각각의 서버들은 동일한 Docker Network에 위치하므로, IP 주소 외에도 Container 이름으로 참조 가능.
   ![application-architecture-02.png](image/application-architecture-02.png)
+
+<br/>
+
+## 11-2. 각 서비스들 가상화
+
+### RabbitMQ
+
+```shell
+$ docker run -d --name rabbitmq --network ecommerce-network \
+ -p 5672:5672 -p 15672:15672 -p 4369:4369 -p 5671:5671 -p 15671:15671 \
+ -e RABBITMQ_DEFAULT_USER=guest -e RABBITMQ_DEFAULT_PASS=guest \
+ rabbitmq:management
+```
