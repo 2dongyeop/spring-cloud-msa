@@ -1,8 +1,3 @@
-인프런에서 [Spring Cloud로 개발하는 마이크로서비스 애플리케이션 강의](https://www.inflearn.com/course/%EC%8A%A4%ED%94%84%EB%A7%81-%ED%81%B4%EB%9D%BC%EC%9A%B0%EB%93%9C-%EB%A7%88%EC%9D%B4%ED%81%AC%EB%A1%9C%EC%84%9C%EB%B9%84%EC%8A%A4/dashboard)
-를 듣고 정리한 내용입니다.
-
-<br/>
-
 ## 목차
 
 1. [Spring Cloud Netflix Eureka](#1-spring-cloud-netflix-eureka)
@@ -2039,6 +2034,8 @@ ENTRYPOINT ["java", "-jar", "ConfigServer.jar"]
 ```shell
 # Config Server 위치에서
 $ docker build --tag leedongyeop/config-service:1.0.0 .
+
+$ docker push leedongyeop/config-service:1.0.0
 ```
 
 3. Docker Container Start
@@ -2064,3 +2061,37 @@ $ docker logs config-service
 
 - 브라우저에서 `localhost:8888/ecommerce/default` 접속
 - `propertySources.name`이 Git 주소로 되어있는지 확인
+
+<br/>
+
+### Discovery Service
+
+1. Dockerfile 작성
+
+```dockerfile
+FROM openjdk:17-ea-11-jdk-slim
+VOLUME /tmp
+
+COPY target/discoveryservice-1.0.0.jar DiscoveryService.jar
+
+ENTRYPOINT ["java", "-jar", "DiscoveryService.jar"]
+```
+
+2. Docker Image Build
+
+```shell
+$ docker build --tag leedongyeop/discovery-service:1.0.0 .
+
+# Docker Image Push To Public Repository
+$ docker push leedongyeop/discovery-service:1.0.0
+```
+
+3. Docker Container Start
+
+- Config Server의 주소명에 IP 대신 Docker Image Name으로 명시
+
+```shell
+$ docker run -d -p 8761:8761 --network ecommerce-network \
+ -e "spring.cloud.config.uri=http://config-service:8888" \
+ --name discovery-service leedongyeop/discovery-service:1.0.0
+```

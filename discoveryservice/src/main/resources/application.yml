@@ -5,7 +5,11 @@ spring:
   application:
     name: discoveryservice
 
-# ?? ??? discovery? ???? ??? ??
+  cloud:
+    config:
+      uri: http://127.0.0.1:8888 # local 실행시 주소
+      name: ecommerce
+
 eureka:
   client:
     register-with-eureka: false
