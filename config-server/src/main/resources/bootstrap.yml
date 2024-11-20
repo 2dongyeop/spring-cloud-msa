@@ -1,7 +1,11 @@
 encrypt:
   # 단방향 암호화. keytool을 이용한 .jks 파일 필요 x
-#  key: abcdefghijklmnopqrstuvwxyz0123456789
+  #  key: abcdefghijklmnopqrstuvwxyz0123456789
   key-store:
-    location: file://${user.home}/Developments/spring-cloud-msa/config-server/keystore/2dongyeop.jks
+    #    Local 실행시
+    #    location: file://${user.home}/Developments/spring-cloud-msa/config-server/keystore/2dongyeop.jks
+
+    #     Docker Image 빌드시
+    location: file:/2dongyeop.jks
     password: example1234
     alias: 2dongyeop

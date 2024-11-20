@@ -2018,3 +2018,49 @@ $ docker run -d --name rabbitmq --network ecommerce-network \
  -e RABBITMQ_DEFAULT_USER=guest -e RABBITMQ_DEFAULT_PASS=guest \
  rabbitmq:management
 ```
+
+### Config Server
+
+1. Dockerfile 작성
+
+```shell
+FROM openjdk:17-ea-11-jdk-slim
+VOLUME /tmp
+
+# Config Server의 경우는 jks 키파일도 반드시 복사해줘야함.
+COPY keystore/2dongyeop.jks 2dongyeop.jks
+COPY target/config-service-1.0.0.jar ConfigServer.jar
+
+ENTRYPOINT ["java", "-jar", "ConfigServer.jar"]
+```
+
+2. Docker Image Build
+
+```shell
+# Config Server 위치에서
+$ docker build --tag leedongyeop/config-service:1.0.0 .
+```
+
+3. Docker Container Start
+
+- RabbitMQ의 주소를 (Docker network 내에서 실행중이므로) Docker Image Name으로 참조 가능.
+    - `docker network inspect ecommerce-network` 명령어로 이름 및 주소 참고
+- 또한 더이상 Local Config Repository를 사용하지 않고, Git을 Config Repository로 사용하기 위해 프로필을 Default로 지정.
+
+```shell
+$ docker run -d -p 8888:8888 --network ecommerce-network \
+-e "spring.rabbitmq.host=rabbitmq" \
+-e "spring.profiles.active=default" \
+--name config-service leedongyeop/config-service:1.0.0
+```
+
+4. 기동 결과 확인
+
+```shell
+$ docker logs config-service
+```
+
+5. 설정파일 소스 확인
+
+- 브라우저에서 `localhost:8888/ecommerce/default` 접속
+- `propertySources.name`이 Git 주소로 되어있는지 확인
