@@ -2123,7 +2123,8 @@ $ docker push leedongyeop/apigateway-service:1.0.0
 3. Docker Container Start
 
 - 각 Server의 주소명에 IP 대신 Docker Image Name으로 명시
-  - Config Server, Discovery, RabbitMQ Host
+    - Config Server, Discovery, RabbitMQ Host
+
 ```shell
 docker run -d -p 8000:8000 --network ecommerce-network \
  -e "spring.cloud.config.uri=http://config-service:8888" \
@@ -2131,4 +2132,60 @@ docker run -d -p 8000:8000 --network ecommerce-network \
  -e "eureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/" \
  --name apigateway-service \
  leedongyeop/apigateway-service:1.0.0
+```
+
+<br/>
+
+### MariaDB
+
+1. Dockerfile 작성
+
+```dockerfile
+FROM mariadb
+ENV MYSQL_ROOT_PASSWORD test1234
+ENV MYSQL_DATABASE mydb
+
+COPY ./mysql /var/lib/mysql
+
+EXPOSE 3306
+
+ENTRYPOINT ["mysqld", "--user=root"]
+```
+
+2. Docker Iage Build
+
+```shell
+$ docker build --tag leedongyeop/my-mariadb:1.0.0 .
+
+# Docker Image Push To Public Repository
+$ docker push leedongyeop/my-mariadb:1.0.0
+```
+
+3. Docker Container Start
+
+```shell
+docker run -d --name mysql-container \
+  --network ecommerce-network \
+  --restart always \
+  -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=test1234 \
+  -e TZ=Asia/Seoul \
+  -v $(pwd)/mysql/data:/var/lib/mysql \
+  mysql:8.0 \
+  --character-set-server=utf8mb4
+```
+
+4. MySQL Container 접속 권한 변경
+
+- 어느 IP에서 접근하더라도 모두 접근가능하도록 설정
+
+```shell
+
+
+$ docker exec -it mysql-container /bin/bash
+
+$ mysql -hlocalhost -uroot -ptest1234 
+
+$ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
+
 ```
