@@ -2095,3 +2095,40 @@ $ docker run -d -p 8761:8761 --network ecommerce-network \
  -e "spring.cloud.config.uri=http://config-service:8888" \
  --name discovery-service leedongyeop/discovery-service:1.0.0
 ```
+
+<br/>
+
+### API Gateway Service
+
+1. Dockerfile 작성
+
+```dockerfile
+FROM openjdk:17-ea-11-jdk-slim
+VOLUME /tmp
+
+COPY target/apigateway-service-1.0.0.jar ApiGatewayService.jar
+
+ENTRYPOINT ["java", "-jar", "ApiGatewayService.jar"]
+```
+
+2. Docker Image Build
+
+```shell
+$  docker build --tag leedongyeop/apigateway-service:1.0.0 .
+
+# Docker Image Push To Public Repository
+$ docker push leedongyeop/apigateway-service:1.0.0
+```
+
+3. Docker Container Start
+
+- 각 Server의 주소명에 IP 대신 Docker Image Name으로 명시
+  - Config Server, Discovery, RabbitMQ Host
+```shell
+docker run -d -p 8000:8000 --network ecommerce-network \
+ -e "spring.cloud.config.uri=http://config-service:8888" \
+ -e "spring.rabbitmq.host=rabbitmq" \
+ -e "eureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/" \
+ --name apigateway-service \
+ leedongyeop/apigateway-service:1.0.0
+```
