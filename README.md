@@ -2152,7 +2152,7 @@ EXPOSE 3306
 ENTRYPOINT ["mysqld", "--user=root"]
 ```
 
-2. Docker Iage Build
+2. Docker Image Build
 
 ```shell
 $ docker build --tag leedongyeop/my-mariadb:1.0.0 .
@@ -2188,4 +2188,45 @@ $ mysql -hlocalhost -uroot -ptest1234
 
 $ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 
+```
+
+<br/>
+
+### Zookeeper + Kafka Standalone
+1. Docker Compose 파일 작성
+```yaml
+version: '2'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      my-network:
+        ipv4_address: 172.18.0.100
+  kafka:
+    # build: .
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 172.18.0.101
+      KAFKA_CREATE_TOPICS: "test:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper
+    networks:
+      my-network:
+        ipv4_address: 172.18.0.101
+
+networks:
+  my-network:
+    name: ecommerce-network # 172.18.0.1(Gateway) ~ ...
+```
+
+2. Docker Compose 실행
+```shell
+$ docker-compose -f docker-compose-single-broker.yml up -d
 ```
