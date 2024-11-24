@@ -2193,7 +2193,9 @@ $ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 <br/>
 
 ### Zookeeper + Kafka Standalone
+
 1. Docker Compose 파일 작성
+
 ```yaml
 version: '2'
 services:
@@ -2227,6 +2229,20 @@ networks:
 ```
 
 2. Docker Compose 실행
+
 ```shell
 $ docker-compose -f docker-compose-single-broker.yml up -d
 ```
+
+<br/>
+
+### Zipkin
+
+```shell
+$ docker run -d -p 9411:9411 --network ecommerce-network \
+  --name zipkin openzipkin/zipkin 
+```
+
+<br/>
+
+
