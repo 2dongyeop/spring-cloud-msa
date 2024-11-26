@@ -2280,3 +2280,28 @@ $ docker run -d -p 3000:3000 \
  grafana/grafana 
 ```
 
+<br/>
+
+### User Service
+1. Dockerfile 작성
+```dockerfile
+FROM openjdk:17-ea-11-jdk-slim
+VOLUME /tmp
+
+COPY target/user-service-1.0.0.jar UserService.jar
+
+ENTRYPOINT ["java", "-jar", "UserService.jar"]
+```
+
+2. Docker Container Start
+```shell
+docker run -d --network ecommerce-network \
+  --name user-service \
+  -e "spring.cloud.config.uri=http://config-service:8888" \
+  -e "spring.rabbitmq.host=rabbitmq" \
+  -e "spring.zipkin.base-url=http://zipkin:9411" \
+  -e "management.zipkin.tracing.endpoint=http://zipkin:9411/api/v2/spans" \
+  -e "eureka.client.serviceUrl.defaultZone=http://discovery-service:8761/eureka/" \
+  -e "logging.file=/api-logs/users-ws.log" \
+  leedongyeop/user-service:1.0.0
+```
