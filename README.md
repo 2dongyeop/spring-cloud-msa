@@ -2245,4 +2245,38 @@ $ docker run -d -p 9411:9411 --network ecommerce-network \
 
 <br/>
 
+### Prometheus & Grafana
+
+1. Prometheus.yml target 정보 수정
+
+```yaml
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: [ 'prometheus:9090' ]
+      
+  - job_name: 'apigateway-service'
+    scrape_interval: 15s
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'apigateway-service:8000' ] # localhost, IP 주소가 아닌 Docker 컨테이너 이름으로 명시
+```
+
+2. Docker 명령어 실행
+
+
+```shell
+# Prometheus
+$ docker run -d -p 9090:9090 \
+ --network ecommerce-network \
+ --name prometheus \
+ -v /Users/2dongyeop/Developments/spring-cloud-msa/docker/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml \
+ prom/prometheus 
+
+# Grafana
+$ docker run -d -p 3000:3000 \
+ --network ecommerce-network \
+ --name grafana \
+ grafana/grafana 
+```
 

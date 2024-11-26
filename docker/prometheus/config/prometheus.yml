@@ -14,23 +14,23 @@ rule_files:
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-      - targets: [ 'localhost:9090' ]
+      - targets: [ 'prometheus:9090' ]
 
   - job_name: 'apigateway-service'
     scrape_interval: 15s
     metrics_path: /actuator/prometheus
     static_configs:
 #      - targets: [ 'localhost:8000' ] # API 서버는 Docker 로 기동하지 않으므로, 직접 IP 혹은 DNS 명시.
-      - targets: [ '192.168.0.2:8000' ] # API Gateway 주소
+      - targets: [ 'apigateway-service:8000' ] # API Gateway 주소
 
   - job_name: 'user-service'
     scrape_interval: 15s
     metrics_path: /user-service/actuator/prometheus
     static_configs:
-      - targets: [ '192.168.0.2:8000' ] # API Gateway 주소
+      - targets: [ 'apigateway-service:8000' ] # API Gateway 주소
 
 #  - job_name: 'order-service'
 #    scrape_interval: 15s
 #    metrics_path: /order-service/actuator/prometheus
 #    static_configs:
-#      - targets: [ 'localhost:8000' ] # API Gateway 주소
+#      - targets: [ 'apigateway-service:8000' ] # API Gateway 주소
