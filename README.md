@@ -2253,8 +2253,8 @@ $ docker run -d -p 9411:9411 --network ecommerce-network \
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-    - targets: [ 'prometheus:9090' ]
-      
+      - targets: [ 'prometheus:9090' ]
+
   - job_name: 'apigateway-service'
     scrape_interval: 15s
     metrics_path: /actuator/prometheus
@@ -2263,7 +2263,6 @@ scrape_configs:
 ```
 
 2. Docker 명령어 실행
-
 
 ```shell
 # Prometheus
@@ -2283,7 +2282,9 @@ $ docker run -d -p 3000:3000 \
 <br/>
 
 ### User Service
+
 1. Dockerfile 작성
+
 ```dockerfile
 FROM openjdk:17-ea-11-jdk-slim
 VOLUME /tmp
@@ -2294,6 +2295,7 @@ ENTRYPOINT ["java", "-jar", "UserService.jar"]
 ```
 
 2. Docker Container Start
+
 ```shell
 docker run -d --network ecommerce-network \
   --name user-service \
@@ -2309,7 +2311,9 @@ docker run -d --network ecommerce-network \
 <br/>
 
 ### Order Service
+
 1. Dockerfile 작성
+
 ```dockerfile
 FROM openjdk:17-ea-11-jdk-slim
 VOLUME /tmp
@@ -2320,7 +2324,56 @@ ENTRYPOINT ["java", "-jar", "OrderService.jar"]
 ```
 
 2. Docker Image Build
+
 ```shell
 $ docker build --tag leedongyeop/order-service:1.0.0 .
 $ docker push leedongyeop/order-service:1.0.0
+```
+
+3. Docker Container Start
+
+```shell
+docker run -d --network ecommerce-network \
+  --name order-service \
+  -e "spring.cloud.config.uri=http://config-service:8888" \
+  -e "spring.datasource.url=jdbc:mysql://mysql-container:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true" \
+  -e "spring.rabbitmq.host=rabbitmq" \
+  -e "kafka.server.ip=172.18.0.101:9092" \
+  -e "spring.zipkin.base-url=http://zipkin:9411" \
+  -e "management.zipkin.tracing.endpoint=http://zipkin:9411/api/v2/spans" \
+  -e "eureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/" \
+  -e "logging.file=/api-logs/orders-ws.log" \
+  leedongyeop/order-service:1.0.0
+```
+
+<br/>
+
+1. Dockerfile 작성
+
+```dockerfile
+FROM openjdk:17-ea-11-jdk-slim
+VOLUME /tmp
+
+COPY target/catalog-service-1.0.0.jar CatalogService.jar
+
+ENTRYPOINT ["java", "-jar", "CatalogService.jar"]
+```
+
+2. Docker Image Build
+
+```shell
+$ docker build --tag leedongyeop/catalog-service:1.0.0 .
+$ docker push leedongyeop/catalog-service:1.0.0
+```
+
+3. Docker Container Start
+
+```shell
+docker run -d --network ecommerce-network \
+  --name catalog-service \
+  -e "spring.datasource.url=jdbc:mysql://mysql-container:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true" \
+  -e "kafka.server.ip=172.18.0.101:9092" \
+  -e "eureka.client.service-url.defaultZone=http://discovery-service:8761/eureka/" \
+  -e "logging.file=/api-logs/catalogs-ws.log" \
+  leedongyeop/catalog-service:1.0.0
 ```
