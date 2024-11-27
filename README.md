@@ -2305,3 +2305,22 @@ docker run -d --network ecommerce-network \
   -e "logging.file=/api-logs/users-ws.log" \
   leedongyeop/user-service:1.0.0
 ```
+
+<br/>
+
+### Order Service
+1. Dockerfile 작성
+```dockerfile
+FROM openjdk:17-ea-11-jdk-slim
+VOLUME /tmp
+
+COPY target/order-service-1.0.0.jar OrderService.jar
+
+ENTRYPOINT ["java", "-jar", "OrderService.jar"]
+```
+
+2. Docker Image Build
+```shell
+$ docker build --tag leedongyeop/order-service:1.0.0 .
+$ docker push leedongyeop/order-service:1.0.0
+```
