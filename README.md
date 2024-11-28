@@ -38,6 +38,10 @@
 11. [애플리케이션 배포 구성](#11-애플리케이션-배포-구성)
     - [Docker Network 구성](#11-1-docker-network-구성)
     - [각 서비스들 가상화](#11-2-각-서비스들-가상화)
+12. [Microservice Patterns](#12-microservice-patterns)
+    - [Event Sourcing](#12-1-event-sourcing)
+    - [CQRS : Command and Query Responsibility Segregation](#12-2-cqrs-command-and-query-responsibility-segregation)
+    - [Saga Pattern](#12-3-saga-pattern)
 
 <br/>
 
@@ -2377,3 +2381,135 @@ docker run -d --network ecommerce-network \
   -e "logging.file=/api-logs/catalogs-ws.log" \
   leedongyeop/catalog-service:1.0.0
 ```
+
+<br/>
+
+# 12. Microservice Patterns
+
+## 12-1. Event Sourcing
+
+![event-sourcing.png](image/event-sourcing.png)
+
+### 개념 정리
+
+- 데이터의 마지막 상태만 저장하는 것이 아닌, 해당 데이터에 수행된 전체 이력을 기록
+- 데이터 구조 단순, 데이터의 일관성과 트랜잭션 처리 가능
+- 데이터의 저장소의 개체를 직접 업데이트하지 않기 때문에, 동시성에 대한 충돌 문제 해결
+- 메시지 중심의 비동기 작업 처리
+
+### 도메인 주도 설계 (Domain-Driven Design)
+
+- Aggregate
+    - 데이터의 상태를 바꾸기 위한 개념
+- Projection
+    - 데이터의 상태값을 표현하는 개념
+
+### 단점
+
+- 모든 이벤트를 기록하기 때문에, 모든 트랜잭션을 복원하기에 시간이 걸림.
+    - **스냅샷**이라는 개념을 도입하여, 트랜잭션을 나누어서 관리해야 함.
+- 다양한 데이터가 여러번 조회
+    - **CQRS** 를 이용.
+
+<br/>
+
+## 12-2. CQRS (Command and Query Responsibility Segregation)
+
+![cqrs.png](image/cqrs.png)
+
+### 개념 정리
+
+- 명령과 조회의 책임을 분리하는 개념
+- 명령 : Command & 조회 : Query
+
+<br/>
+
+## 12-3. Saga Pattern
+
+![saga-pattern.png](image/saga-pattern.png)
+
+### 개념 정리
+
+- Application에서 Transaction 처리
+    - Choreography, Orchestration
+- Application이 분리된 경우에 각각의 로컬 Transaction만 처리
+- 각 App에 대한 연속적인 Transaction에서 실패할 경우
+    - Rollback 처리 구현 → `보상 Transaction` (이전으로 롤백하는 작업.)
+- 데이터의 원자성을 보장하지는 않지만, 일관성을 보장
+
+<br/>
+
+### Choreography-based Saga
+
+![Choreography-based-Saga.png](image/Choreography-based-Saga.png)
+
+> 소개
+
+- 여러 서비스가 서로 협력하여 일을 진행하는 방식
+- 각 서비스는 자신이 해야 할 일을 끝낸 후, 다음에 해야 할 일을 다른 서비스에 알려주거나 신호를 보냄
+
+<br/>
+
+> 예시
+
+1. 고객이 항공권을 예약합니다.
+2. 항공권 예약 서비스가 예약 완료 후, "항공권 예약 성공" 이벤트를 발행합니다.
+3. 호텔 예약 서비스는 이 이벤트를 듣고 호텔 예약을 시도합니다.
+4. 호텔 예약이 성공하면 또 다른 이벤트를 발행합니다.
+5. 결제 서비스가 이를 듣고 결제를 처리합니다.
+
+<br/>
+
+> 장점
+
+- 각 서비스가 독립적으로 동작하기 때문에 느슨하게 결합
+- 서비스 간 의존도가 낮아서 변경 사항을 적용하기 쉬움
+
+<br/>
+
+> 단점
+
+- 이벤트 흐름이 복잡해질 수 있으며, 누락되거나 잘못된 이벤트가 발생하면 추적이 어려움
+- 전체 프로세스의 흐름을 파악하기가 어려울 수 있음
+
+<br/>
+
+### Orchestration-based Saga
+
+![Orchestration-based-Saga.png](image/Orchestration-based-Saga.png)
+
+
+> 소개
+
+- 한 중앙 관리자가 모든 작업을 지휘하는 방식
+- "오케스트라 지휘자"처럼 중앙 역할을 하는 서비스가 전체 흐름을 계획하고, 각 서비스에게 명령을 내림
+
+<br/>
+
+> 예시
+
+1. 고객이 항공권을 예약합니다.
+2. 중앙 관리 서비스(오케스트레이터)가 항공권 예약 서비스에 "예약을 시작하세요"라고 요청합니다.
+3. 예약이 완료되면 오케스트레이터는 호텔 예약 서비스에 "이제 호텔을 예약하세요"라고 지시합니다.
+4. 모든 작업이 성공하면 오케스트레이터가 결제 서비스에 "결제를 완료하세요"라고 명령합니다.
+
+<br/>
+
+> 장점
+
+- 중앙 관리자가 있어 전체 흐름을 명확하게 볼 수 있음.
+- 문제 발생 시 중앙에서 오류를 쉽게 처리하거나 조정 가능.
+
+<br/>
+
+> 단점
+
+- 중앙 관리자가 모든 작업을 처리하므로, 이 관리자가 복잡해지고 병목 지점이 될 수 있음.
+- 중앙 관리자가 다운되면 전체 프로세스가 멈출 위험이 존재.
+
+<br/>
+
+### 최종 선택
+
+- 서비스 간의 독립성과 유연성이 중요하다면 → Choreography
+- 명확한 제어와 관리가 중요하다면 → Orchestration
