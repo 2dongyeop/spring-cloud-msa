@@ -5,12 +5,49 @@ spring:
   application:
     name: discoveryservice
 
-  cloud:
-    config:
-      uri: http://127.0.0.1:8888 # local 실행시 주소
-      name: ecommerce
+#  cloud:
+#    config:
+#      uri: http://127.0.0.1:8888 # local 실행시 주소
+#      name: ecommerce
 
 eureka:
   client:
     register-with-eureka: false
     fetch-registry: false
+
+---
+
+## Eureka Server를 여러 대 기동시에 대한 설정.
+## eureka2 는 eureka3을 참조하고, eureka3은 eureka2를 참조하게 하여 등록된 서버 정보를 공유하도록 함.
+
+spring:
+  config:
+    activate:
+      on-profile: eureka2
+
+server:
+  port: 8762
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://idong-yeob-ui-MacBookAir.local:8763/eureka/  # Terminal 에서 $ hostname 명령어 입력시 나오는 값
+  instance:
+    hostname: localhost
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: eureka3
+
+server:
+  port: 8763
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8762/eureka/
+  instance:
+    hostname: DOWONui-MacBookPro.local

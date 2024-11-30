@@ -42,6 +42,8 @@
     - [Event Sourcing](#12-1-event-sourcing)
     - [CQRS : Command and Query Responsibility Segregation](#12-2-cqrs-command-and-query-responsibility-segregation)
     - [Saga Pattern](#12-3-saga-pattern)
+13. [Spring Boot 3.2 + Spring Cloud 2023](#13-spring-boot-32--spring-cloud-2023)
+    - [Eureka Service 이중화](#13-1-eureka-service-이중화)
 
 <br/>
 
@@ -2513,3 +2515,94 @@ docker run -d --network ecommerce-network \
 
 - 서비스 간의 독립성과 유연성이 중요하다면 → Choreography
 - 명확한 제어와 관리가 중요하다면 → Orchestration
+
+<br/>
+
+# 13. Spring Boot 3.2 + Spring Cloud 2023.
+
+위에서 진행한 내용들이 이미 모두 Spring 3.3 + Spring Cloud 2023 으로 구성되어 있기에 큰 변화는 없습니다.
+
+## 13-1. Eureka Service 이중화
+
+### Eureka Service 설정파일 수정
+
+```yaml
+server:
+  port: 8761
+
+spring:
+  application:
+    name: discoveryservice
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+
+---
+
+## Eureka Server를 여러 대 기동시에 대한 설정.
+## eureka2 는 eureka3을 참조하고, eureka3은 eureka2를 참조하게 하여 등록된 서버 정보를 공유하도록 함.
+
+spring:
+  config:
+    activate:
+      on-profile: eureka2
+
+server:
+  port: 8762
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://idong-yeob-ui-MacBookAir.local:8763/eureka/  # Terminal 에서 $ hostname 명령어 입력시 나오는 값
+  instance:
+    hostname: localhost
+
+---
+
+spring:
+  config:
+    activate:
+      on-profile: eureka3
+
+server:
+  port: 8763
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://localhost:8762/eureka/
+  instance:
+    hostname: DOWONui-MacBookPro.local
+```
+
+<br/>
+
+### 기타 API Server 설정파일 수정
+
+```yaml
+server:
+  port: 0
+
+spring:
+  application:
+    name: my-first-service
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url: # 이중화된 2개 이상의 Eureka 서버를 지정.
+      defaultZone: http://idong-yeob-ui-MacBookAir.local:8763/eureka, http://localhost:8763/eureka
+  instance:
+    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+```
+
+<br/>
+
+### 이중화 효과
+
+- API Server는 Eureka Server 2대에 등록됨
+    - 여러 Eureka Server 끼리 등록되어 있는 서버 정보를 공유
+- 2대 중 1대가 문제가 생겨 종료되고 재기동했을 때, 다른 유레카 서버로부터 정보를 공유받을 수 있음. 
