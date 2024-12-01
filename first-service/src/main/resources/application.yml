@@ -1,5 +1,5 @@
 server:
-  port: 0
+  port: 8081
 
 spring:
   application:
@@ -11,5 +11,7 @@ eureka:
     fetch-registry: true
     service-url:
       defaultZone: http://localhost:8761/eureka
+  #      defaultZone: http://localhost:8762/eureka, http://Kubernetes.docker.internal:8763/eureka
   instance:
-    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+    instance-id: ${spring.cloud.client.ip-address}:${spring.application.instance_id:${random.value}}
+    prefer-ip-address: true # IP Address 값을 고정값으로 사용.

@@ -2605,4 +2605,45 @@ eureka:
 
 - API Server는 Eureka Server 2대에 등록됨
     - 여러 Eureka Server 끼리 등록되어 있는 서버 정보를 공유
-- 2대 중 1대가 문제가 생겨 종료되고 재기동했을 때, 다른 유레카 서버로부터 정보를 공유받을 수 있음. 
+- 2대 중 1대가 문제가 생겨 종료되고 재기동했을 때, 다른 유레카 서버로부터 정보를 공유받을 수 있음.
+
+<br/>
+
+## 13-2. Gateway 를 통한 요청인지 구분 추가
+
+```yaml
+spring:
+  cloud:
+    gateway:
+      default-filters:
+        - name: GlobalFilter
+          args:
+            baseMessage: Spring Cloud Gateway Global Filter
+            preLogger: true
+            postLogger: true
+      routes:
+        - id: first-service
+          uri: lb://MY-FIRST-SERVICE
+          predicates:
+            - Path=/first-service/**
+          filters:
+            - AddRequestHeader=first-request, first-request-header-by-yaml
+            - AddResponseHeader=first-response, first-response-header-by-yaml
+            - CustomFilter
+        - id: second-service
+          uri: lb://MY-SECOND-SERVICE
+          predicates:
+            - Path=/second-service/**
+          filters:
+            - AddRequestHeader=second-request, second-request-header-by-yaml
+            - AddResponseHeader=second-response, second-response-header-by-yaml
+            - name: CustomFilter
+            - name: LoggingFilter
+              args:
+                baseMessage: Hi, Logging Filter
+                preLogger: true
+                postLogger: true
+```
+
+<br/>
+

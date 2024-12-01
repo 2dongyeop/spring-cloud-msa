@@ -1,0 +1,67 @@
+server:
+  port: 8000
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+
+spring:
+
+  application:
+    name: apigateway-service
+
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672 # 5672 is AMQP protocol port. 15672 is RabbitMQ UI port
+    username: guest # default value
+    password: guest # default value
+
+  profiles:
+    active: dev
+
+  config:
+    activate:
+      on-profile: simple # Spring Cloud 구성 요소에 대한 프로필 처리.
+
+  cloud:
+    gateway:
+      default-filters:
+        - name: GlobalFilter
+          args:
+            baseMessage: Spring Cloud Gateway Global Filter
+            preLogger: true
+            postLogger: true
+      routes:
+        - id: first-service
+          uri: lb://MY-FIRST-SERVICE
+          predicates:
+            - Path=/first-service/**
+          filters:
+            - AddRequestHeader=first-request, first-request-header-by-yaml
+            - AddResponseHeader=first-response, first-response-header-by-yaml
+            - CustomFilter
+        - id: second-service
+          uri: lb://MY-SECOND-SERVICE
+          predicates:
+            - Path=/second-service/**
+          filters:
+            - AddRequestHeader=second-request, second-request-header-by-yaml
+            - AddResponseHeader=second-response, second-response-header-by-yaml
+            - name: CustomFilter
+            - name: LoggingFilter
+              args:
+                baseMessage: Hi, Logging Filter
+                preLogger: true
+                postLogger: true
+
+token:
+  secret: user_token
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh, health, beans, httptrace, busrefresh, info, metrics, prometheus

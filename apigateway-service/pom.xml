@@ -31,6 +31,12 @@
         <spring-cloud.version>2023.0.0</spring-cloud.version>
     </properties>
     <dependencies>
+        <!-- 비동기 처리로 동작하도록 하기 위함. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
@@ -69,10 +75,10 @@
         </dependency>
 
         <!-- Spring Cloud Bus -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-bus-amqp</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.cloud</groupId>-->
+<!--            <artifactId>spring-cloud-starter-bus-amqp</artifactId>-->
+<!--        </dependency>-->
 
 
         <!-- Micrometer 지표를 Prometheus로 보내는 라이브러리 -->

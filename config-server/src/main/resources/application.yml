@@ -5,14 +5,14 @@ spring:
   application:
     name: config-service
 
-  rabbitmq:
-    host: 127.0.0.1
-    port: 5672 # 5672 is AMQP protocol port. 15672 is RabbitMQ UI port
-    username: guest # default value
-    password: guest # default value
+#  rabbitmq:
+#    host: 127.0.0.1
+#    port: 5672 # 5672 is AMQP protocol port. 15672 is RabbitMQ UI port
+#    username: guest # default value
+#    password: guest # default value
 
-  profiles:
-    active: native # if config server target Native File System (Not Git)
+#  profiles:
+#    active: native # if config server target Native File System (Not Git)
 
   cloud:
     config:
