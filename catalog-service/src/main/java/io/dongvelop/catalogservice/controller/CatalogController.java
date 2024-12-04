@@ -5,6 +5,8 @@ import io.dongvelop.catalogservice.service.CatalogService;
 import io.dongvelop.catalogservice.vo.ResponseCatalog;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,7 @@ public class CatalogController {
 
     private final Environment env;
     private final CatalogService catalogService;
+    private final DiscoveryClient discoveryClient;
 
     @GetMapping("/catalogs")
     public ResponseEntity<List<ResponseCatalog>> getUsers() {
@@ -40,7 +43,24 @@ public class CatalogController {
 
     @GetMapping("/health_check")
     public String status() {
+        final List<ServiceInstance> serviceList = getApplications();
+        for (ServiceInstance instance : serviceList) {
+            System.out.println(String.format("instanceId:$s, serviceId:%s, host:%s, schema:%s, uri:%s",
+                    instance.getInstanceId(), instance.getServiceId(), instance.getHost(), instance.getUri()));
+        }
+
+
         return String.format("It's Working in User Service on PORT %s",
                 env.getProperty("local.server.port"));
+    }
+
+    private List<ServiceInstance> getApplications() {
+
+        final List<String> services = this.discoveryClient.getServices();
+        final List<ServiceInstance> instances = new ArrayList<>();
+
+        services.forEach(serviceName -> instances.addAll(this.discoveryClient.getInstances(serviceName)));
+
+        return instances;
     }
 }
