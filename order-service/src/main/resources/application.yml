@@ -1,5 +1,5 @@
 server:
-  port: 0 # random port
+  port: 10000 # random port
 
 spring:
   application:
