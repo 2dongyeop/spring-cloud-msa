@@ -44,6 +44,7 @@
     - [Saga Pattern](#12-3-saga-pattern)
 13. [Spring Boot 3.2 + Spring Cloud 2023](#13-spring-boot-32--spring-cloud-2023)
     - [Eureka Service 이중화](#13-1-eureka-service-이중화)
+14. [Kubernetes 배포](#14-kubernetes-배포)
 
 <br/>
 
@@ -2647,3 +2648,86 @@ spring:
 
 <br/>
 
+# 14. Kubernetes 배포
+
+## 14.1 배포 목표 형태
+
+| 구분                 | Before           (Docker)  | After (k8s)                        |
+|--------------------|----------------------------|------------------------------------|
+| Outer Architecture | Eureka(Discovery Service)  | service                            |
+| Outer Architecture | Spring Cloud Gateway       | service / ingress                  |
+| Outer Architecture | Spring Cloud Config Server | configmap / secret                 |
+| Outer Architecture | Kafka                      | Kafka                              |
+| Inner Architecture | user-service               | deployment / pod <user-service>    |
+| Inner Architecture | order-service              | deployment / pod <order-service>   |
+| Inner Architecture | catalog-service            | deployment / pod <catalog-service> |
+
+<br/>
+
+## 14.2 k8s ConfigMap 동작 개념
+
+1. `k8s/configmap.yml` 에 환경변수 값 설정
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: msa-k8s-configmap
+data:
+  gateway_ip: 192.168.0.1
+  ...
+```
+
+2. `k8s/user-deploy.yml` 에서 `configmap.yml`을 참조
+
+```yaml
+...
+env:
+  - name: GATEWAY_IP
+    valueFrom:
+    configMapKeyRef:
+      name: msa-k8s-configmap
+      key: gateway_ip
+```
+
+3. 각 API 서버들의 환경 설정 파일(`application.yml`) 에서 `user-deploy.yml`을 참조
+
+```yaml
+gateway:
+  ip: ${GATEWAY_IP}
+```
+
+<br/>
+
+## 14.3 k8s 환경 구성
+
+### Kafka
+
+- 아래의 `KAFKA_ADVERTISED_LISTENERS`에서 입력하는 `PLAINTEXT_HOST` 속성은 Kafka가 접근을 허용할 주소에 해당됨.
+    - 다음 명령어 참조 - `kubectl describe node docekr-desktop | grep InternalIP`
+
+```yaml
+# k8s/docker-compose-kafka.yml
+services:
+  broker:
+    image: apache/kafka:latest
+    hostname: broker
+    container_name: broker
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT_HOST://192.168.65.3:9092,PLAINTEXT://broker:19092'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@broker:29093'
+      KAFKA_LISTENERS: 'CONTROLLER://:29093,PLAINTEXT_HOST://:9092,PLAINTEXT://:19092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      CLUSTER_ID: '4L6g3nShT-eMCtK--X86sw'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+```
