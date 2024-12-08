@@ -45,6 +45,10 @@
 13. [Spring Boot 3.2 + Spring Cloud 2023](#13-spring-boot-32--spring-cloud-2023)
     - [Eureka Service 이중화](#13-1-eureka-service-이중화)
 14. [Kubernetes 배포](#14-kubernetes-배포)
+    - [배포 목표 형태](#141-배포-목표-형태)
+    - [k8s ConfigMap 동작 개념](#142-k8s-configmap-동작-개념)
+    - [k8s Kafka 환경 구성](#143-k8s-kafka-환경-구성)
+    - [k8s 명령어](#144-k8s-명령어)
 
 <br/>
 
@@ -2699,9 +2703,7 @@ gateway:
 
 <br/>
 
-## 14.3 k8s 환경 구성
-
-### Kafka
+## 14.3 k8s Kafka 환경 구성
 
 - 아래의 `KAFKA_ADVERTISED_LISTENERS`에서 입력하는 `PLAINTEXT_HOST` 속성은 Kafka가 접근을 허용할 주소에 해당됨.
     - 다음 명령어 참조 - `kubectl describe node docekr-desktop | grep InternalIP`
@@ -2730,4 +2732,42 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+```
+
+## 14.4 k8s 명령어
+
+### 배포 관련
+
+```shell
+# k8s node ip address 확인
+$ kubectl get nodes
+NAME             STATUS   ROLES           AGE     VERSION
+docker-desktop   Ready    control-plane   4m32s   v1.25.2
+
+$ kubectl describe node docker-desktop | grep InternalIP
+InternalIP:  192.168.65.4
+
+# Kafka 실행 (아래에서 docker-compose-kafka.yml 참고)
+$ docker-compose up -f docker-compose-kafka.yml -describe
+
+# k8s deployment, service 실행
+$ kubectl apply -f k8s/user-deploy.yml
+$ kubectl apply -f k8s/order-deploy.yml
+$ kubectl apply -f k8s/catalog-deploy.yml
+```
+
+### 실행 관련
+
+```shell
+# docker container process 확인
+$ docker-compose -f docker-compose-kafka.yml ps
+
+# 서비스 기동 상태 확인
+$ kubectl get svc
+
+# deploy 상태 확인
+$ kubectl get deploy
+
+# pod 상태 확인
+$ kubectl get pod
 ```
