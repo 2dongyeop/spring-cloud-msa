@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: msa-k8s-configmap
+data:
+  gateway_ip: "192.168.65.4"  # k8s node Internal IP
+  token_expiration_time: "86400000"
+  token_secret: "SAMPLE_KEY_#1"
+  order-service-url: "http://order-service:10000"
+  bootstrap-servers: "192.168.65.3:9092"

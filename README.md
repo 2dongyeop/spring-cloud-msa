@@ -49,6 +49,7 @@
     - [k8s ConfigMap 동작 개념](#142-k8s-configmap-동작-개념)
     - [k8s Kafka 환경 구성](#143-k8s-kafka-환경-구성)
     - [k8s 명령어](#144-k8s-명령어)
+    - [k8s 인프라 구성](#145-k8s-인프라-구성)
 
 <br/>
 
@@ -2739,11 +2740,12 @@ services:
 ### 배포 관련
 
 ```shell
-# k8s node ip address 확인
+# k8s node 정보 확인
 $ kubectl get nodes
 NAME             STATUS   ROLES           AGE     VERSION
 docker-desktop   Ready    control-plane   4m32s   v1.25.2
 
+# k8s node IP Address 확인
 $ kubectl describe node docker-desktop | grep InternalIP
 InternalIP:  192.168.65.4
 
@@ -2759,8 +2761,13 @@ $ kubectl apply -f k8s/catalog-deploy.yml
 ### 실행 관련
 
 ```shell
+# docker kafka 실행
+$ docker-compose -f docker-compose-kafka.yml up -d
+
 # docker container process 확인
 $ docker-compose -f docker-compose-kafka.yml ps
+NAME                COMMAND                  SERVICE             STATUS              PORTS
+broker              "/__cacert_entrypoin…"   broker              running             0.0.0.0:9092->9092/tcp
 
 # 서비스 기동 상태 확인
 $ kubectl get svc
@@ -2771,3 +2778,35 @@ $ kubectl get deploy
 # pod 상태 확인
 $ kubectl get pod
 ```
+
+## 14.5 k8s 인프라 구성
+
+### ConfigMap 설정파일 작성
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: msa-k8s-configmap
+data:
+  gateway_ip: "192.168.65.4"  # k8s node Internal IP
+  token_expiration_time: "86400000"
+  token_secret: "SAMPLE_KEY_#1"
+  order-service-url: "http://order-service:10000"
+  bootstrap-servers: "192.168.65.3:9092"
+```
+
+### ConfigMap 실행
+
+```shell
+$ 실행
+$ kubectl apply -f configmap.yml
+configmap/msa-k8s-configmap created
+
+# 실행 확인
+$ kubectl get configmap
+NAME                DATA   AGE
+kube-root-ca.crt    1      2d3h
+msa-k8s-configmap   5      38s
+```
+

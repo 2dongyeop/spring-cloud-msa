@@ -44,7 +44,7 @@ public class UserServiceImpl implements UserService {
     private final CircuitBreakerFactory circuitBreakerFactory;
 
 
-    @Value("${url.order-service.order}")
+    @Value("${order-service-url}")
     private String orderUrl;
 
     @Override

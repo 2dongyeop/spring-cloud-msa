@@ -1,22 +1,29 @@
 server:
-  port: 0 # random port
+  port: 60000 # random port
 
 spring:
   application:
     name: user-service
 
-  rabbitmq:
-    host: 127.0.0.1
-    port: 5672 # 5672 is AMQP protocol port. 15672 is RabbitMQ UI port
-    username: guest # default value
-    password: guest # default value
+  datasource:
+    #url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://mysql-container:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: test1234
+    driver-class-name: org.mariadb.jdbc.Driver
 
-# Migration To Local Config Repository
-#  datasource:
-#    url: jdbc:h2:tcp://localhost/~/testdb
-#    username: sa
-#    password:
-#    driver-class-name: org.h2.Driver
+  #  rabbitmq:
+  #    host: 127.0.0.1
+  #    port: 5672 # 5672 is AMQP protocol port. 15672 is RabbitMQ UI port
+  #    username: guest # default value
+  #    password: guest # default value
+
+  # Migration To Local Config Repository
+  #  datasource:
+  #    url: jdbc:h2:tcp://localhost/~/testdb
+  #    username: sa
+  #    password:
+  #    driver-class-name: org.h2.Driver
 
   jpa:
     hibernate:
@@ -39,7 +46,7 @@ management:
   tracing:
     sampling:
       probability: 1.0   # 로그 샘플링 비율 - 1.0일 경우에는 100% 로그를 샘플링, default : 0.1
-    propagation:         # 추적 정보 전파 방식 (wbc, b3, b3_multi)
+    propagation: # 추적 정보 전파 방식 (wbc, b3, b3_multi)
       produce: b3_multi  # 추적 정보를 여러 개의 헤더로 나누어 전송
       consume: b3        # HTTP 헤더를 사용하여 추적 ID, 스팬 ID 등을 전달
 
@@ -56,6 +63,22 @@ management:
         # 다른 엔드포인트와 다르게 POST 방식으로 요청
         # example >> curl -X POST "localhost:57165/actuator/refresh"
 
+################ k8s configuration ##################
+##### user-deploy.yml << 참조
+order-service-url: ${ORDER-SERVICE-URL}
+gateway:
+  ip: ${GATEWAY_IP}
+token:
+  expiration_time: ${TOKEN_EXPIRATION_TIME}
+  secret: ${TOKEN_SECRET}
+####################################################
+
+url:
+  order-service:
+    #    order: http://localhost:8000/order-service/%s/orders
+    order: http://ORDER-SERVICE/order-service/%s/orders
+    exception:
+      order_is_empty: User's order is empty.
 
 greeting:
   message: Welcome to the Simple E-commerce.
@@ -66,6 +89,6 @@ logging:
   level:
     io.dongvelop.userservice.client: DEBUG
 
-token:
-  expiration_time: 86400000
-  secret: user_token
+#token:
+#  expiration_time: 86400000
+#  secret: user_token

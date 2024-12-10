@@ -1,5 +1,6 @@
 package io.dongvelop.userservice.client;
 
+import io.dongvelop.userservice.error.FeignErrorDecoder;
 import io.dongvelop.userservice.vo.ResponseOrder;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +13,7 @@ import java.util.List;
  * @date 2024. 10. 14
  * @description
  */
-@FeignClient(value = "order-service")
+@FeignClient(name = "order-service", configuration = FeignErrorDecoder.class, url = "${order-service-url}")
 public interface OrderServiceClient {
 
     @GetMapping("/order-service/{userId}/orders")

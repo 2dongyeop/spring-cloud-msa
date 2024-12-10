@@ -5,6 +5,12 @@ spring:
   application:
     name: order-service
 
+  ############ k8s Configuration ############
+  kafka:
+    producer:
+      bootstrap-servers: ${BOOTSTRAP-SERVERS}
+  ############ k8s Configuration ############
+
   datasource:
     url: jdbc:mysql://localhost:3306/mydb?useSSL=false&serverTimezone=Asia/Seoul&autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
     username: root
@@ -23,14 +29,14 @@ spring:
     database: mysql
     database-platform: org.hibernate.dialect.MySQLDialect
 
-eureka:
-  instance:
-    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
-  client:
-    register-with-eureka: true  # Eureka ? ??
-    fetch-registry: true        # Eureka?? ????? ?? ??? polling ??
-    service-url:
-      defaultZone: http://127.0.0.1:8761/eureka
+#eureka:
+#  instance:
+#    instance-id: ${spring.application.name}:${spring.application.instance_id:${random.value}}
+#  client:
+#    register-with-eureka: true  # Eureka ? ??
+#    fetch-registry: true        # Eureka?? ????? ?? ??? polling ??
+#    service-url:
+#      defaultZone: http://127.0.0.1:8761/eureka
 
 management:
   endpoints:
