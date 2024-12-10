@@ -2810,3 +2810,16 @@ kube-root-ca.crt    1      2d3h
 msa-k8s-configmap   5      38s
 ```
 
+### API Server Build
+```shell
+# user-service 위치에서 Jar file build
+$ mvn clean compile package -DskipTests=true
+
+# Docker Image Build
+$ docker build --tag leedongyeop/user-service:k8s_v1.0 -f Dockerfile .
+
+# Docker Hub Push
+$ docker push leedongyeop/user-service:k8s_v1.0
+```
+
+### 각 서비스 Deploy Yaml 작성
