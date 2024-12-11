@@ -2811,6 +2811,7 @@ msa-k8s-configmap   5      38s
 ```
 
 ### API Server Build
+
 ```shell
 # user-service 위치에서 Jar file build
 $ mvn clean compile package -DskipTests=true
@@ -2820,6 +2821,216 @@ $ docker build --tag leedongyeop/user-service:k8s_v1.0 -f Dockerfile .
 
 # Docker Hub Push
 $ docker push leedongyeop/user-service:k8s_v1.0
+
+# order-service & catalog-service 도 동일하게 위 과정 수행.
 ```
 
-### 각 서비스 Deploy Yaml 작성
+### User Service Deploy Yaml 작성
+
+```yaml
+# user-deploy.yml
+apiVersion: apps/v1
+kind: Deployment  # 쿠버네티스 리소스 중 deployment 임을 명시.
+# k8s에서는 Pod 단위로 서비스를 운영 & Pod 내에는 여러 컨테이너가 존재
+# Pod를 묶어서 배포 단위로 사용할 때, 이 deployment라는 리소스를 사용
+metadata:
+  name: user-deploy
+spec:
+  selector:
+    matchLabels:
+      app: user-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: user-app
+    spec:
+      containers:
+        - name: user-service
+          image: leedongyeop/user-service:k8s_v1.0 # Docker Hub Image
+          imagePullPolicy: Always # 매번 배포할 때마다 새롭게 Hub에서 pull
+          ports:
+            - containerPort: 60000
+              protocol: TCP
+          resources:
+            requests: # Pod (컨테이너)가 사용할 수 있는 리소스
+              cpu: 500m
+              memory: 1000Mi
+          env: # user-service의 application.yml에서 참조할 환경설정 값들
+            - name: GATEWAY_IP
+              valueFrom:
+                configMapKeyRef:
+                  name: msa-k8s-configmap # 참조할 ConfigMap Name
+                  key: gateway_ip         # 참조할 값의 Key
+            - name: TOKEN_EXPIRATION_TIME
+              valueFrom:
+                configMapKeyRef:
+                  name: msa-k8s-configmap
+                  key: token_expiration_time
+            - name: TOKEN_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: msa-k8s-configmap
+                  key: token_secret
+            - name: ORDER-SERVICE-URL
+              valueFrom:
+                configMapKeyRef:
+                  name: msa-k8s-configmap
+                  key: order-service-url
+---
+apiVersion: v1
+kind: Service  # 쿠버네티스 리소스 중 service 임을 명시.
+# k8s에서 외부에서 deployment나 pod를 사용하기 위해 필요한 네트워크 설정을 담당. 
+metadata:
+  name: user-service
+spec:
+  type: NodePort  # 호스트 PC에서 사용할 수 있도록 노드 포트로 지정하는 옵션
+  selector:
+    app: user-app # deployment에서 명시한 값과 동일해야 지정됨.
+  ports:
+    - protocol: TCP
+      port: 60000  # Spring Boot Port(60000)을 외부에서 접근할 때는 30001로 관리
+      targetPort: 60000
+      nodePort: 30001
+```
+
+### Order Service Deploy Yaml 작성
+
+```yaml
+# order-deploy.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-deploy
+spec:
+  selector:
+    matchLabels:
+      app: order-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: order-app
+    spec:
+      containers:
+        - name: order-service
+          image: leedongyeop/order-service:k8s_v1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 10000
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1000Mi
+          env:
+            - name: BOOTSTRAP-SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: msa-k8s-configmap
+                  key: bootstrap-servers
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+spec:
+  type: NodePort
+  selector:
+    app: order-app
+  ports:
+    - protocol: TCP
+      port: 10000
+      targetPort: 10000
+      nodePort: 30002
+```
+
+### Catalog Service Deploy Yaml 작성
+
+```yaml
+# catalog-deploy.yml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-deploy
+spec:
+  selector:
+    matchLabels:
+      app: catalog-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: catalog-app
+    spec:
+      containers:
+        - name: catalog-service
+          image: leedongyeop/catalog-service:k8s_v1.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1000Mi
+          env:
+            - name: BOOTSTRAP-SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: msa-k8s-configmap
+                  key: bootstrap-servers
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+spec:
+  type: NodePort
+  selector:
+    app: catalog-app
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30003
+```
+
+### k8s 적용
+
+```shell
+# order & catalog 서비스도 동일하게 apply
+$ kubectl apply -f k8s/user-deploy.yml
+deployment.apps/user-deploy created
+service/user-service created
+
+# 서비스 조회
+$ kubectl get svc
+NAME              TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)           AGE
+catalog-service   NodePort    10.97.196.18   <none>        8080:30003/TCP    69s
+kubernetes        ClusterIP   10.96.0.1      <none>        443/TCP           3d5h
+order-service     NodePort    10.103.20.33   <none>        10000:30002/TCP   99s
+user-service      NodePort    10.105.32.8    <none>        60000:30001/TCP   2m29s
+
+# Deployment 조회
+$ kubectl get deploy
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+catalog-deploy   0/1     1            0           110s
+order-deploy     0/1     1            0           2m20s
+user-deploy      0/1     1            0           3m10s
+
+# Pod 조회
+### 아래와 같이 STATUS가 Running 으로 나와야 정상에 해당.
+### 현재 예시는 DB & Gateway와 같이 필수적인 서비스들을 제외하고 단순 k8s 동작과정을 이해하기 위해 진행했기에 발생한 문제들.
+$ kubectl get pod
+NAME                              READY   STATUS             RESTARTS      AGE
+catalog-deploy-66b9bd47bc-grq22   0/1     CrashLoopBackOff   3 (32s ago)   2m16s
+order-deploy-86f8b67d47-fgfl7     1/1     Running            4 (59s ago)   2m46s
+user-deploy-89897c9f4-jdx5s       0/1     ErrImagePull       0             3m36s
+
+# 특정 Pod 로그 확인
+# kubectl logs -f {Pod Name}
+$ kubectl logs -f user-deploy-89897c9f4-jdx5s
+```
+
+
