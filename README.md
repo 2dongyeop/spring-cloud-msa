@@ -1,17 +1,23 @@
 ## 목차
 
 1. [Spring Cloud Netflix Eureka](#1-spring-cloud-netflix-eureka)
-    - [Eureka Server](#11-eureka-server)
+    - [Eureka Server 소개](#11-eureka-server-소개)
+    - [Eureka Server 이용](#12-eureka-server-이용)
+    - [Eureka Client 소개](#13-eureka-client-소개)
+    - [Eureka Client 이용](#14-eureka-client-이용)
 2. [API Gateway(Netflix Zuul, Spring Cloud Gateway)](#2-api-gateway-netflix-zuul-spring-cloud-gateway)
-    - [API Gateway란?](#21-api-gateway란)
+    - [API Gateway 소개](#21-api-gateway-소개)
     - [Spring Cloud Zuul](#22-spring-cloud-zuul)
     - [Spring Cloud Gateway](#23-spring-cloud-gateway)
     - [Spring Cloud Gateway Filter](#24-spring-cloud-gateway--filter-적용하기)
-    - [Spring Cloud Gateway LoadBalancer](#24-spring-cloud-gateway--loadbalancer)
+    - [Spring Cloud Gateway LoadBalancer](#25-spring-cloud-gateway--loadbalancer)
+    - [Spring Cloud Gateway Predicates Filters](#26-spring-cloud-gateway--predicates--filters)
 3. [Spring Cloud Config Server](#3-spring-cloud-config-server)
-    - [Spring Cloud Config 적용 방법](#31-spring-cloud-config-적용-방법)
-    - [Spring Cloud Config Encrypt/Decrypt](#32-spring-cloud-config-적용-방법)
-    - [Config Server의 변경사항을 종료없이 Micro Service에 적용하기](#34-config-server의-변경-값을-micro-service에-적용하기)
+    - [Spring Cloud Config Server 소개](#31-spring-cloud-config-server-소개)
+    - [Spring Cloud Config Server 장단점](#32-spring-cloud-config-server-장단점)
+    - [Spring Cloud Config Server Config 적용](#33-spring-cloud-config-적용-방법)
+    - [Spring Cloud Config Encrypt/Decrypt](#34-spring-cloud-config-encryptdecrypt)
+    - [Config Server의 변경사항을 종료없이 Micro Service에 적용하기](#35-config-server의-변경-값을-micro-service에-적용하기)
 4. [Spring Cloud Bus](#4-spring-cloud-bus)
     - [AMQP 설명](#41-amqp-설명)
     - [Spring Cloud Bus 동작](#42-spring-cloud-bus-동작-방식)
@@ -71,7 +77,7 @@ Spring Cloud Eureka는 서비스 레지스트리와 서비스 디스커버리를
 
 <br/>
 
-## 1.1 Eureka Server
+## 1.1 Eureka Server 소개
 
 - REST API 기반으로 다양한 언어에서 사용 가능
 - 레지스트리의 모든 정보는 모든 Eureka Client에서 복제되어 있으며 가용 중인 모든 서비스들의 목록을 확인할 수 있고 30초마다 목록이 갱신됨
@@ -79,6 +85,8 @@ Spring Cloud Eureka는 서비스 레지스트리와 서비스 디스커버리를
 - 가용 상태의 서비스 목록 확인 시 서비스의 이름을 기준으로 탐색, 로드 밸런싱을 위해 내부적으로 Ribbon (클라이언트 측의 로드 밸런서) 을 사용
 
 <br/>
+
+## 1.2 Eureka Server 이용
 
 ### 의존성 추가
 
@@ -95,8 +103,11 @@ Spring Cloud Eureka는 서비스 레지스트리와 서비스 디스커버리를
 <br/>
 
 ### 유레카 서버 활성화
+
 : `@EnableEurekaServer`을 이용해 유레카 서버를 활성화
+
 ```java
+
 @EnableEurekaServer
 @SpringBootApplication
 public class DiscoveryserviceApplication {
@@ -112,21 +123,28 @@ public class DiscoveryserviceApplication {
 <br/>
 
 ### 유레카 서버 GUI 활용
+
 : 브라우저에서 `{serverUrl}:{serverPort}` 접속시, 등록된 마이크로 서비스들을 확인 가능
+
 ![img](image/eureka-1.png)
 
 
 <br/>
 
-## 1.2 Eureka Client
+## 1.3 Eureka Client 소개
+
 - 서비스 시작 시 Eureka Server에 자신의 정보를 등록
 - 등록된 후 30초마다 레지스트리에 핑을 전송하여 자신의 가용 상태를 알림
 - 레지스트리로부터 다른 Eureka Client의 서비스 정보를 확인할 수 있음
 
 <br/>
 
+## 1.4 Eureka Client 이용
+
 ### 의존성 추가
+
 ```xml
+
 <dependencies>
     <dependency>
         <groupId>org.springframework.cloud</groupId>
@@ -139,7 +157,9 @@ public class DiscoveryserviceApplication {
 
 ### 유레카 클라이언트 활성화
 : `@EnableDiscoveryClient`를 이용해 유레카 클라이언트 활성화
+
 ```java
+
 @EnableDiscoveryClient
 @SpringBootApplication
 public class UserServiceApplication {
@@ -155,6 +175,7 @@ public class UserServiceApplication {
 <br/>
 
 ### 유레카에 마이크로 서비스 등록
+
 ```yaml
 spring:
   application:
@@ -172,11 +193,11 @@ eureka:
 
 # 2. API Gateway (Netflix Zuul, Spring Cloud Gateway)
 
-## 2.1 API Gateway란?
+## 2.1 API Gateway 소개
 
 ![img](image/apigateway-1.png)
 
-> API Gateway의 역할
+> API Gateway 역할
 
 - 인증 및 권한 부여
 - 서비스 검색 통합
@@ -212,7 +233,9 @@ Spring Boot 2.4에서 Maintenance 상태 (현재는 Deprecated)
 
 ### Netflix Zuul 활성화
 : `@EnableZuulProxy` 를 이용해 활성화
+
 ```java
+
 @EnableZuulProxy
 @SpringBootApplication
 public class ZuulServiceApplication {
@@ -228,6 +251,7 @@ public class ZuulServiceApplication {
 <br/>
 
 ### 마이크로 서비스 라우팅 설정
+
 ```yaml
 spring:
   application:
@@ -365,7 +389,7 @@ spring:
 
 <br/>
 
-## 2.4 Spring Cloud Gateway : LoadBalancer
+## 2.5 Spring Cloud Gateway : LoadBalancer
 
 Spring Cloud Gateway에는 로드밸런싱 기능이 기본 내장되어있다. (Spring Cloud LoadBalancer 와는 무관)
 
@@ -383,7 +407,7 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
         gateway:
         routes:
             - id: first-service
-            uri: http://localhost:8081/   # {서버주소}:{서버포트}
+              uri: http://localhost:8081/   # {서버주소}:{서버포트}
     ```
 
 - TO-BE : **서버의 애플리케이션 이름으로만 명시**
@@ -393,12 +417,12 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
         gateway:
         routes:
             - id: first-service
-            uri: lb://MY-FIRST-SERVICE    # {lb=로드밸런싱}:#{서비스이름}
+              uri: lb://MY-FIRST-SERVICE    # {lb=로드밸런싱}:#{서비스이름}
     ```
 
 <br/>
 
-## 2.4 Spring Cloud Gateway : Predicates & Filters
+## 2.6 Spring Cloud Gateway : Predicates & Filters
 
 아래에서는 Gateway에서 특정 조건이 만족할 경우, 요청 경로를 수정하는 예제다.
 
@@ -437,17 +461,20 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
 
 ![img](image/config-1.png)
 
+## 3.1 Spring Cloud Config Server 소개
+
 - Config Server는 여러 서비스(MSA) 들의 설정 파일을 외부로 분리해, 하나의 중앙 설정 저장소 처럼 관리 할 수 있도록 해주며, **특정 설정 값이 변경시 각각의 서비스를 재기동 할 필요없이 적용이
   가능하다.**
 - 기본적으로 설정 정보 저장을 위해 git을 사용하도록 되어있어서 손쉽게 외부 도구들로 접근 가능하고, 버전 관리도 가능하다. (Git이 아닌, 서버에서 파일로 로컬 보관도 가능하다.)
 
 <br/>
 
-## 3.1 Spring Cloud Config의 장단점
+## 3.2 Spring Cloud Config Server 장단점
 
 ### 장점
 
-1. 여러 서버의 설정 파일을 중앙 서버에서 관리할 수 있다.2. 서버를 재배포 하지 않고 설정 파일의 변경사항을 반영할 수 있다.
+1. 여러 서버의 설정 파일을 중앙 서버에서 관리할 수 있다.
+2. 서버를 재배포 하지 않고 설정 파일의 변경사항을 반영할 수 있다.
 
 <br/>
 
@@ -463,7 +490,7 @@ API Gateway의 환경 설정에서 마이크로 서비스들의 라우팅 정보
 
 <br/>
 
-## 3.2 Spring Cloud Config 적용 방법
+## 3.3 Spring Cloud Config 적용 방법
 
 ### 의존성 추가
 
@@ -558,7 +585,7 @@ spring:
 
 <br/>
 
-## 3.3 Spring Cloud Config Encrypt/Decrypt
+## 3.4 Spring Cloud Config Encrypt/Decrypt
 
 - Config Server는 속성을 암호화하기 위해 대칭 키와 비대칭 키를 모두
   지원한다. → [참고자료](https://docs.spring.io/spring-cloud-config/reference/server/encryption-and-decryption.html)
@@ -611,7 +638,7 @@ $ curl {config-server-url}:{port}/encrypt -d "plaintext"
 
 <br/>
 
-## 3.4 Config Server의 변경 값을 Micro Service에 적용하기
+## 3.5 Config Server의 변경 값을 Micro Service에 적용하기
 
 ### 1. Micro Service를 재부팅하기
 
